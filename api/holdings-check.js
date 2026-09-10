@@ -1,8 +1,3 @@
-bash
-
-cat /mnt/user-data/outputs/api-cron-holdings-check.js
-Output
-
 // api/holdings-check.js  (plain Vercel Serverless Function — no framework needed)
 //
 // RUNS: 10:00am daily (see vercel.json below)
