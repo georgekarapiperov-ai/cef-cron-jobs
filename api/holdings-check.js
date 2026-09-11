@@ -173,11 +173,18 @@ async function checkOne(ticker) {
 }
 
 async function runHoldingsCheck() {
-  const results = [];
-  for (const ticker of WATCHLIST) {
-    results.push(await checkOne(ticker));
-    await new Promise(r => setTimeout(r, 800)); // be polite, stagger requests
-  }
+  // Run all fund checks CONCURRENTLY instead of one-at-a-time with delays.
+  // Sequential-with-delay added up past Vercel's time limit once CEFConnect
+  // proved slow to respond to some requests; running in parallel means the
+  // whole batch takes as long as the SLOWEST single fetch (capped at 8s by
+  // fetchText's own timeout), not the sum of all of them.
+  //
+  // SCALING NOTE: this is fine at 10 funds. Once you expand WATCHLIST to all
+  // 86, firing 86 requests at CEFConnect in the same instant risks looking
+  // like abusive traffic and getting your IP blocked. At that point, switch
+  // to batches of ~15 running concurrently, then move to the next batch,
+  // rather than all 86 simultaneously or all 86 one-by-one.
+  const results = await Promise.all(WATCHLIST.map(ticker => checkOne(ticker)));
   if (shouldCheckBamsec()) {
     console.log("[holdings-check] 1st of the month — remember to cross-check latest N-PORT filings on BAMSEC for funds flagged above.");
   }
