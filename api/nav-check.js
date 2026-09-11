@@ -148,14 +148,21 @@ async function checkOneNav(ticker) {
     // cefdata.com actually returns so we can verify (or fix) the parser
     // against real content instead of guessing. Remove once confirmed.
     if (ticker === "USA") {
-      const idx = html.indexOf(">NAV<") >= 0 ? html.indexOf(">NAV<") : html.indexOf("NAV");
+      // Search directly for the known-correct value ($6.66, per manual
+      // verification) to find exactly where/how the real NAV is embedded,
+      // instead of guessing based on where the word "NAV" appears (which
+      // matched a generic SEO description sentence last time).
+      const knownValue = "6.6";
+      const idx = html.indexOf(knownValue);
       await kv.set("debug:cefdata-raw-sample", {
         ticker,
         url,
         htmlLength: html.length,
         parsedNav: nav,
-        navWordIndex: idx,
-        sample: idx >= 0 ? html.slice(Math.max(0, idx - 200), idx + 3000) : html.slice(0, 3000)
+        knownValueFound: idx >= 0,
+        knownValueIndex: idx,
+        sample: idx >= 0 ? html.slice(Math.max(0, idx - 500), idx + 1500) : "VALUE '6.6' NOT FOUND ANYWHERE ON PAGE — see fullSampleStart instead",
+        fullSampleStart: html.slice(0, 3000)
       });
     }
   } catch (err) {
