@@ -65,11 +65,23 @@ async function fetchText(url, timeoutMs = 20000) {
   }
 }
 
-function parseCefDataNav(html) {
-  // First-draft regex — CEFdata's page structure hasn't been verified the way
-  // CEFConnect's was; adjust after checking real output from your first runs.
-  const m = html.match(/NAV[\s\S]{0,50}?\$?(\d+\.\d{2})/);
-  return m ? parseFloat(m[1]) : null;
+function parseCefDataOverview(html) {
+  // CONFIRMED WORKING (2026-09-11) against real cefdata.com output. This
+  // matches an internal data structure embedded in the page's JavaScript
+  // framework payload (not a documented API) — a sequence of raw volume
+  // number, then quoted date/price/nav/discount strings in that exact order:
+  //   3616192,"2026-09-10","5.85","6.66","-12.1621621621621621216"
+  // This is fragile in the sense that it depends on cefdata.com's internal
+  // data format staying the same shape — if it ever stops matching, that's
+  // the likely reason, not a logic bug.
+  const m = html.match(/\d+,"(\d{4}-\d{2}-\d{2})","(\d+\.\d+)","(\d+\.\d+)","(-?\d+\.\d+)"/);
+  if (!m) return null;
+  return {
+    date: m[1],
+    sharePrice: parseFloat(m[2]),
+    nav: parseFloat(m[3]),
+    premiumDiscountPct: parseFloat(m[4])
+  };
 }
 
 function parseCefConnectOverview(html) {
@@ -141,35 +153,14 @@ async function checkOneNav(ticker) {
   try {
     const url = `${CEFDATA_BASE}${ticker.toLowerCase()}`;
     const html = await fetchText(url);
-    nav = parseCefDataNav(html);
-    if (nav) source = "cefdata";
-
-    // TEMPORARY DIAGNOSTIC: same approach as holdings-check.js — capture what
-    // cefdata.com actually returns so we can verify (or fix) the parser
-    // against real content instead of guessing. Remove once confirmed.
-    if (ticker === "USA") {
-      // Search directly for the known-correct value ($6.66, per manual
-      // verification) to find exactly where/how the real NAV is embedded,
-      // instead of guessing based on where the word "NAV" appears (which
-      // matched a generic SEO description sentence last time).
-      const knownValue = "6.6";
-      const idx = html.indexOf(knownValue);
-      await kv.set("debug:cefdata-raw-sample", {
-        ticker,
-        url,
-        htmlLength: html.length,
-        parsedNav: nav,
-        knownValueFound: idx >= 0,
-        knownValueIndex: idx,
-        sample: idx >= 0 ? html.slice(Math.max(0, idx - 500), idx + 1500) : "VALUE '6.6' NOT FOUND ANYWHERE ON PAGE — see fullSampleStart instead",
-        fullSampleStart: html.slice(0, 3000)
-      });
+    const overview = parseCefDataOverview(html);
+    if (overview) {
+      nav = overview.nav;
+      sharePrice = overview.sharePrice;
+      premDisc = overview.premiumDiscountPct;
+      source = "cefdata";
     }
-  } catch (err) {
-    if (ticker === "USA") {
-      await kv.set("debug:cefdata-raw-sample", { ticker, url: `${CEFDATA_BASE}${ticker.toLowerCase()}`, error: err.message });
-    }
-  }
+  } catch { /* fall through to CEFConnect */ }
 
   // Fall back to CEFConnect if CEFdata didn't have it yet today.
   if (!nav) {
