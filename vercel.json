@@ -1,4 +1,4 @@
-
+{
   "crons": [
     { "path": "/api/holdings-check", "schedule": "0 7 * * 1-5" },
     { "path": "/api/nav-check", "schedule": "0 8 * * 1-5" }
