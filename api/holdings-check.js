@@ -152,6 +152,20 @@ async function checkOne(ticker) {
     const asOf = parseCefConnectHoldingsDate(html);
     const isNewer = !stored || !asOf || asOf !== stored.asOfDate;
 
+    // TEMPORARY DIAGNOSTIC: dump a chunk of the raw HTML around wherever the
+    // word "Holdings" appears, so we can see the ACTUAL page structure and
+    // write a regex that matches it — instead of guessing again. Remove this
+    // block once parseCefConnectTopHoldings is confirmed working.
+    if (ticker === "USA") {
+      const idx = html.indexOf("Holdings");
+      await kv.set("debug:raw-html-sample", {
+        ticker,
+        htmlLength: html.length,
+        holdingsWordIndex: idx,
+        sample: idx >= 0 ? html.slice(idx, idx + 3000) : html.slice(0, 3000)
+      });
+    }
+
     if (isNewer) {
       const holdings = parseCefConnectTopHoldings(html);
       const diff = diffHoldings(stored?.holdings, holdings);
