@@ -40,7 +40,7 @@ const CEFDATA_BASE = "https://cefdata.com/funds/";      // verify exact path per
 const CEFCONNECT_BASE = "https://www.cefconnect.com/fund/";
 const YAHOO_CHART_BASE = "https://query1.finance.yahoo.com/v8/finance/chart/"; // same endpoint used by api-quote-proxy.js
 
-async function fetchText(url, timeoutMs = 8000) {
+async function fetchText(url, timeoutMs = 20000) {
   // Same per-request timeout fix as holdings-check.js — see comment there.
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
