@@ -4,7 +4,7 @@
     { "path": "/api/nav-check", "schedule": "0 16 * * 1-5" }
   ],
   "functions": {
-    "api/holdings-check.js": { "maxDuration": 60 },
-    "api/nav-check.js": { "maxDuration": 60 }
+    "api/holdings-check.js": { "maxDuration": 180 },
+    "api/nav-check.js": { "maxDuration": 180 }
   }
 }
