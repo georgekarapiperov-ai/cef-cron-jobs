@@ -65,7 +65,7 @@ const SPONSOR_URLS = {
   FT:   "https://www.franklintempleton.com/forms-literature/download/002-FF" // factsheet PDF
 };
 
-async function fetchText(url, timeoutMs = 8000) {
+async function fetchText(url, timeoutMs = 20000) {
   // A hard timeout per request — without this, ONE slow/hanging site can
   // stall the entire job (this was likely the real cause of the 504 timeouts
   // during testing, more so than the function's own overall time limit).
