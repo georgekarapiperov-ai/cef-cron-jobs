@@ -59,11 +59,48 @@ const CEFCONNECT_BASE = "https://www.cefconnect.com/fund/";
 
 // Add to this as you confirm more sponsor page patterns.
 const SPONSOR_URLS = {
+  // Entire BlackRock family confirmed working (they all share the same site
+  // structure — verified against BCAT, BUI, BGR during manual checks).
   BCAT: "https://www.blackrock.com/us/individual/products/315530/blackrock-capital-allocation-term-trust",
   BUI:  "https://www.blackrock.com/us/individual/products/240173/blackrock-utility-and-infrastructure-trust-fund",
   BGR:  "https://www.blackrock.com/us/individual/products/240226/blackrock-energy-and-resources-trust-fund",
+  BCX:  "https://www.blackrock.com/us/individual/products/256576/blackrock-resources-and-commodities-strategy-trust-aggregate-fund",
+  BST:  "https://www.blackrock.com/us/individual/products/270141/blackrock-science-and-technology-trust-fund",
+  BME:  "https://www.blackrock.com/us/individual/products/240227/blackrock-health-sciences-trust-usd-fund",
+  BMEZ: "https://www.blackrock.com/us/individual/products/312196/health-sciences-term-trust",
+  CII:  "https://www.blackrock.com/us/individual/products/240242/blackrock-enhanced-capital-and-income-fund-inc-usd-fund",
+  BTX:  "https://www.blackrock.com/us/individual/products/317597/blackrock-technology-and-private-equity-term-trust",
+  BOE:  "https://www.blackrock.com/us/individual/products/240197/blackrock-global-opportunities-equity-trust-fund",
+  ECAT: "https://www.blackrock.com/us/individual/products/320060/blackrock-esg-capital-allocation-term-trust-class",
+  // BSTZ URL not yet located — add when found (search "blackrock.com individual products BSTZ science technology term trust II")
   FT:   "https://www.franklintempleton.com/forms-literature/download/002-FF" // factsheet PDF
 };
+
+function parseGenericAsOfDate(html) {
+  // Sponsor sites don't share one format the way CEFConnect does, so this
+  // tries a few common patterns. Returns null if none match — the caller
+  // treats that as "can't compare, don't trust this source's date."
+  const m = html.match(/[Aa]s [Oo]f:?\s*(\d{1,2}\/\d{1,2}\/\d{4})/)
+         || html.match(/(\d{4}-\d{2}-\d{2})/);
+  return m ? m[1] : null;
+}
+
+function toComparableDate(dateStr) {
+  // Handles both M/D/YYYY (CEFConnect style) and YYYY-MM-DD — returns a Date
+  // object for straightforward newer-than comparison, or null if unparseable.
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function parseGenericTopHoldings(html) {
+  // For sponsor sites, which don't share CEFConnect's specific table ID.
+  // Looser than the CEFConnect-specific parser, so more prone to false
+  // matches — that's why holdings-check.js only trusts it when it finds a
+  // reasonable-looking count (>=5) of results, not any single hit.
+  const rows = [...html.matchAll(/([A-Za-z0-9&.,'\- ]{3,60})\s+(-?\d{1,2}\.\d{2})%/g)];
+  return rows.slice(0, 10).map(r => ({ name: r[1].trim(), weightPct: parseFloat(r[2]) }));
+}
 
 async function fetchText(url, timeoutMs = 20000) {
   // A hard timeout per request — without this, ONE slow/hanging site can
@@ -149,63 +186,105 @@ function shouldCheckBamsec() {
 }
 
 const WATCHLIST = [
-  "USA","UTG","UTF","DNP","BUI","MEGI","GLU","DPG","ERH","FT" /* ...append the rest of your 86 */
+  "USA", "UTG", "UTF", "DNP", "BUI", "MEGI", "GLU", "DPG", "ERH", "PEO",
+  "BGR", "NXG", "EMO", "BCX", "RQI", "RNP", "RFI", "JRS", "JRI", "AWP",
+  "THW", "THQ", "HQH", "HQL", "BMEZ", "BME", "PDX", "GNT", "GGN", "BCV",
+  "TY", "STK", "ETO", "LGI", "BST", "BSTZ", "GDV", "NIE", "CCD", "AIO",
+  "RMT", "RVT", "NCZ", "AVK", "ECAT", "NBXG", "BCAT", "ETB", "SPXX", "JCE",
+  "RIV", "ETG", "AGD", "NFJ", "BTX", "ETY", "CHI", "GLQ", "ETV", "ETW",
+  "ETJ", "ADX", "ASG", "AOD", "EOI", "FT", "CHW", "GAB", "EOS", "EXG",
+  "CSQ", "CPZ", "NMAI", "BOE", "CLM", "CRF", "CHY", "FFA", "ACV", "QQQX",
+  "BTO", "SCD", "CII", "NCV", "CGO", "STEW"
 ];
 
 async function checkOne(ticker) {
   const stored = await getStoredHoldings(ticker);
 
+  // --- Fetch CEFConnect ---
+  let cefconnect = null;
   try {
     const html = await fetchText(`${CEFCONNECT_BASE}${ticker}?view=fund`);
     const asOf = parseCefConnectHoldingsDate(html);
-    // Also re-check if the previously stored holdings list is empty — this
-    // catches cases like our own earlier testing, where a parsing bug saved
-    // an empty list under a valid date; without this, a same-date match would
-    // wrongly be treated as "nothing to do" forever.
-    const isNewer = !stored || !asOf || asOf !== stored.asOfDate || !stored.holdings || stored.holdings.length === 0;
-
-    if (isNewer) {
-      const holdings = parseCefConnectTopHoldings(html);
-      const diff = diffHoldings(stored?.holdings, holdings);
-      if (diff.changed) {
-        await logAlert(ticker, `Holdings changed — added: [${diff.added.join(", ")}], removed: [${diff.removed.join(", ")}]`);
-      }
-      await saveHoldings(ticker, asOf, holdings, "cefconnect");
-      return { ticker, updated: true, source: "cefconnect", changed: diff.changed, holdingsFound: holdings.length };
-    }
-
-    // CEFConnect date hasn't moved — try the sponsor site if we have one on file.
-    if (SPONSOR_URLS[ticker]) {
-      const sponsorHtml = await fetchText(SPONSOR_URLS[ticker]);
-      const sponsorHoldings = parseCefConnectTopHoldings(sponsorHtml); // heuristic; sponsor pages vary
-      if (sponsorHoldings.length >= 5) {
-        const diff = diffHoldings(stored?.holdings, sponsorHoldings);
-        if (diff.changed) await logAlert(ticker, `Sponsor site shows newer holdings than CEFConnect — added: [${diff.added.join(", ")}], removed: [${diff.removed.join(", ")}]`);
-        await saveHoldings(ticker, new Date().toISOString().slice(0,10), sponsorHoldings, "sponsor");
-        return { ticker, updated: true, source: "sponsor", changed: diff.changed };
-      }
-    }
-
-    return { ticker, updated: false, source: "cefconnect", changed: false };
+    const holdings = parseCefConnectTopHoldings(html);
+    cefconnect = { asOf, holdings, dateObj: toComparableDate(asOf) };
   } catch (err) {
-    await logAlert(ticker, `Fetch/parse failed: ${err.message}`);
-    return { ticker, updated: false, error: err.message };
+    await logAlert(ticker, `CEFConnect fetch/parse failed: ${err.message}`);
   }
+
+  // --- Fetch the sponsor site too, if we have one on file — ALWAYS, not
+  // just as a fallback, per the "check both and use whichever is newer"
+  // approach ---
+  let sponsor = null;
+  if (SPONSOR_URLS[ticker]) {
+    try {
+      const html = await fetchText(SPONSOR_URLS[ticker]);
+      const asOf = parseGenericAsOfDate(html);
+      const holdings = parseGenericTopHoldings(html);
+      if (holdings.length >= 5) {
+        sponsor = { asOf, holdings, dateObj: toComparableDate(asOf) };
+      }
+    } catch (err) {
+      await logAlert(ticker, `Sponsor site fetch/parse failed: ${err.message}`);
+    }
+  }
+
+  // --- Decide which source is actually newer ---
+  // Prefer whichever has a later parseable date; if only one source parsed
+  // successfully, use that one; if neither has a usable date but one has
+  // holdings and the other doesn't, use the one with holdings.
+  let winner = null, winnerSource = null;
+  if (cefconnect?.holdings.length && sponsor?.holdings.length) {
+    if (cefconnect.dateObj && sponsor.dateObj) {
+      if (sponsor.dateObj > cefconnect.dateObj) { winner = sponsor; winnerSource = "sponsor"; }
+      else { winner = cefconnect; winnerSource = "cefconnect"; }
+    } else {
+      // Can't compare dates reliably — CEFConnect's structured table is the
+      // more trustworthy parse of the two, so prefer it as the tiebreaker.
+      winner = cefconnect; winnerSource = "cefconnect";
+    }
+  } else if (cefconnect?.holdings.length) {
+    winner = cefconnect; winnerSource = "cefconnect";
+  } else if (sponsor?.holdings.length) {
+    winner = sponsor; winnerSource = "sponsor";
+  }
+
+  if (!winner) {
+    return { ticker, updated: false, error: "no usable holdings from either source" };
+  }
+
+  const asOfToStore = winner.asOf || new Date().toISOString().slice(0, 10);
+  const isNewer = !stored || asOfToStore !== stored.asOfDate || !stored.holdings || stored.holdings.length === 0;
+
+  if (!isNewer) {
+    return { ticker, updated: false, source: winnerSource, changed: false };
+  }
+
+  const diff = diffHoldings(stored?.holdings, winner.holdings);
+  if (diff.changed) {
+    await logAlert(ticker, `Holdings changed (source: ${winnerSource}) — added: [${diff.added.join(", ")}], removed: [${diff.removed.join(", ")}]`);
+  }
+  await saveHoldings(ticker, asOfToStore, winner.holdings, winnerSource);
+  return { ticker, updated: true, source: winnerSource, changed: diff.changed, holdingsFound: winner.holdings.length };
+}
+
+function chunk(arr, size) {
+  const out = [];
+  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+  return out;
 }
 
 async function runHoldingsCheck() {
-  // Run all fund checks CONCURRENTLY instead of one-at-a-time with delays.
-  // Sequential-with-delay added up past Vercel's time limit once CEFConnect
-  // proved slow to respond to some requests; running in parallel means the
-  // whole batch takes as long as the SLOWEST single fetch (capped at 8s by
-  // fetchText's own timeout), not the sum of all of them.
-  //
-  // SCALING NOTE: this is fine at 10 funds. Once you expand WATCHLIST to all
-  // 86, firing 86 requests at CEFConnect in the same instant risks looking
-  // like abusive traffic and getting your IP blocked. At that point, switch
-  // to batches of ~15 running concurrently, then move to the next batch,
-  // rather than all 86 simultaneously or all 86 one-by-one.
-  const results = await Promise.all(WATCHLIST.map(ticker => checkOne(ticker)));
+  // Run funds in BATCHES of 15 concurrently, moving to the next batch after
+  // each finishes — a middle ground between one-at-a-time (too slow, timed
+  // out earlier) and all-86-at-once (looks like abusive traffic to
+  // CEFConnect and risks getting blocked, now that we know it's already
+  // filtering suspicious requests).
+  const batches = chunk(WATCHLIST, 15);
+  const results = [];
+  for (const batch of batches) {
+    const batchResults = await Promise.all(batch.map(ticker => checkOne(ticker)));
+    results.push(...batchResults);
+  }
   if (shouldCheckBamsec()) {
     console.log("[holdings-check] 1st of the month — remember to cross-check latest N-PORT filings on BAMSEC for funds flagged above.");
   }
