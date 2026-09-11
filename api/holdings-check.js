@@ -65,10 +65,22 @@ const SPONSOR_URLS = {
   FT:   "https://www.franklintempleton.com/forms-literature/download/002-FF" // factsheet PDF
 };
 
-async function fetchText(url) {
-  const res = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0 (compatible; CEFDeskBot/1.0)" } });
-  if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
-  return res.text();
+async function fetchText(url, timeoutMs = 8000) {
+  // A hard timeout per request — without this, ONE slow/hanging site can
+  // stall the entire job (this was likely the real cause of the 504 timeouts
+  // during testing, more so than the function's own overall time limit).
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, {
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; CEFDeskBot/1.0)" },
+      signal: controller.signal
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
+    return await res.text();
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 function parseCefConnectHoldingsDate(html) {
