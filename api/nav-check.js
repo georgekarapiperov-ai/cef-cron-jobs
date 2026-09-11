@@ -143,7 +143,15 @@ function compute52wNavRange(history) {
 }
 
 const WATCHLIST = [
-  "USA","UTG","UTF","DNP","BUI","MEGI","GLU","DPG","ERH","FT" /* ...append the rest of your 86 */
+  "USA", "UTG", "UTF", "DNP", "BUI", "MEGI", "GLU", "DPG", "ERH", "PEO",
+  "BGR", "NXG", "EMO", "BCX", "RQI", "RNP", "RFI", "JRS", "JRI", "AWP",
+  "THW", "THQ", "HQH", "HQL", "BMEZ", "BME", "PDX", "GNT", "GGN", "BCV",
+  "TY", "STK", "ETO", "LGI", "BST", "BSTZ", "GDV", "NIE", "CCD", "AIO",
+  "RMT", "RVT", "NCZ", "AVK", "ECAT", "NBXG", "BCAT", "ETB", "SPXX", "JCE",
+  "RIV", "ETG", "AGD", "NFJ", "BTX", "ETY", "CHI", "GLQ", "ETV", "ETW",
+  "ETJ", "ADX", "ASG", "AOD", "EOI", "FT", "CHW", "GAB", "EOS", "EXG",
+  "CSQ", "CPZ", "NMAI", "BOE", "CLM", "CRF", "CHY", "FFA", "ACV", "QQQX",
+  "BTO", "SCD", "CII", "NCV", "CGO", "STEW"
 ];
 
 async function checkOneNav(ticker) {
@@ -204,12 +212,21 @@ async function checkOneNav(ticker) {
   return { ticker, ok: true, ...snapshot };
 }
 
+function chunk(arr, size) {
+  const out = [];
+  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+  return out;
+}
+
 async function runNavCheck() {
-  // Same fix as holdings-check.js: run concurrently instead of one-at-a-time
-  // with delays, since sequential-with-delay was exceeding Vercel's time
-  // limit. Same scaling note applies once WATCHLIST grows to all 86 —
-  // batch into groups of ~15 rather than firing all 86 at once.
-  const results = await Promise.all(WATCHLIST.map(ticker => checkOneNav(ticker)));
+  // Batches of 15, same reasoning as holdings-check.js — avoids looking like
+  // abusive traffic to cefdata.com/CEFConnect at full 86-at-once scale.
+  const batches = chunk(WATCHLIST, 15);
+  const results = [];
+  for (const batch of batches) {
+    const batchResults = await Promise.all(batch.map(ticker => checkOneNav(ticker)));
+    results.push(...batchResults);
+  }
   return results;
 }
 
