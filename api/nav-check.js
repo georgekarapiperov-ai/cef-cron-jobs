@@ -139,10 +139,28 @@ async function checkOneNav(ticker) {
 
   // Try CEFdata first, per your preference for speed.
   try {
-    const html = await fetchText(`${CEFDATA_BASE}${ticker.toLowerCase()}`);
+    const url = `${CEFDATA_BASE}${ticker.toLowerCase()}`;
+    const html = await fetchText(url);
     nav = parseCefDataNav(html);
     if (nav) source = "cefdata";
-  } catch { /* fall through to CEFConnect */ }
+
+    // TEMPORARY DIAGNOSTIC: same approach as holdings-check.js — capture what
+    // cefdata.com actually returns so we can verify (or fix) the parser
+    // against real content instead of guessing. Remove once confirmed.
+    if (ticker === "USA") {
+      await kv.set("debug:cefdata-raw-sample", {
+        ticker,
+        url,
+        htmlLength: html.length,
+        parsedNav: nav,
+        sample: html.slice(0, 5000)
+      });
+    }
+  } catch (err) {
+    if (ticker === "USA") {
+      await kv.set("debug:cefdata-raw-sample", { ticker, url: `${CEFDATA_BASE}${ticker.toLowerCase()}`, error: err.message });
+    }
+  }
 
   // Fall back to CEFConnect if CEFdata didn't have it yet today.
   if (!nav) {
@@ -199,3 +217,4 @@ export default async function handler(req, res) {
   const results = await runNavCheck();
   res.status(200).json({ ok: true, checked: results.length, results });
 }
+
