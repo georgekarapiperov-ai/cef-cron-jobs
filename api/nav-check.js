@@ -148,12 +148,14 @@ async function checkOneNav(ticker) {
     // cefdata.com actually returns so we can verify (or fix) the parser
     // against real content instead of guessing. Remove once confirmed.
     if (ticker === "USA") {
+      const idx = html.indexOf(">NAV<") >= 0 ? html.indexOf(">NAV<") : html.indexOf("NAV");
       await kv.set("debug:cefdata-raw-sample", {
         ticker,
         url,
         htmlLength: html.length,
         parsedNav: nav,
-        sample: html.slice(0, 5000)
+        navWordIndex: idx,
+        sample: idx >= 0 ? html.slice(Math.max(0, idx - 200), idx + 3000) : html.slice(0, 3000)
       });
     }
   } catch (err) {
@@ -217,4 +219,3 @@ export default async function handler(req, res) {
   const results = await runNavCheck();
   res.status(200).json({ ok: true, checked: results.length, results });
 }
-
