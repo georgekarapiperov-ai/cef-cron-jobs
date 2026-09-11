@@ -98,12 +98,20 @@ function parseCefConnectHoldingsDate(html) {
 }
 
 function parseCefConnectTopHoldings(html) {
-  // Matches rows like: "NextEra Energy Inc ... 4.75%" in the top-holdings table.
-  // This regex is intentionally loose since CEFConnect's markup varies by fund
-  // type (equity vs swap-heavy vs convertible) — verify a sample manually
-  // after the first few automated runs.
-  const rows = [...html.matchAll(/([A-Za-z0-9&.,'\- ]{3,60})\s+(-?\d{1,2}\.\d{2})%/g)];
-  return rows.slice(0, 10).map(r => ({ name: r[1].trim(), weightPct: parseFloat(r[2]) }));
+  // CONFIRMED WORKING (2026-09-11) against real CEFConnect HTML, fetched with
+  // ?view=fund appended to the URL (essential — without it, the actual
+  // holdings table isn't present in the page at all, only a JS-rendered
+  // widget). The table has a stable element ID we can anchor on directly,
+  // which avoids accidentally matching the similarly-structured "Country
+  // Allocation" table further down the same page.
+  const tableMatch = html.match(/TopHoldingsGrid"[\s\S]*?<\/table>/);
+  if (!tableMatch) return [];
+  const tableHtml = tableMatch[0];
+  // Each real data row looks like:
+  //   <td>NVIDIA Corp</td><td class="right-align">$115.44M</td><td class="right-align">5.70%</td>
+  // The header row uses <th> instead of <td> so it's naturally excluded.
+  const rows = [...tableHtml.matchAll(/<td>([^<]+)<\/td>\s*<td class="right-align">[^<]*<\/td>\s*<td class="right-align">(-?\d+\.\d+)%<\/td>/g)];
+  return rows.map(r => ({ name: r[1].trim(), weightPct: parseFloat(r[2]) }));
 }
 
 function diffHoldings(oldList, newList) {
@@ -150,22 +158,11 @@ async function checkOne(ticker) {
   try {
     const html = await fetchText(`${CEFCONNECT_BASE}${ticker}?view=fund`);
     const asOf = parseCefConnectHoldingsDate(html);
-    const isNewer = !stored || !asOf || asOf !== stored.asOfDate;
-
-    // TEMPORARY DIAGNOSTIC: dump a chunk of the raw HTML around wherever the
-    // word "Holdings" appears, so we can see the ACTUAL page structure and
-    // write a regex that matches it — instead of guessing again. Remove this
-    // block once parseCefConnectTopHoldings is confirmed working.
-    if (ticker === "USA") {
-      let idx = html.indexOf("Top Holdings");
-      if (idx < 0) idx = html.indexOf("Holdings");
-      await kv.set("debug:raw-html-sample", {
-        ticker,
-        htmlLength: html.length,
-        holdingsWordIndex: idx,
-        sample: idx >= 0 ? html.slice(idx, idx + 5000) : html.slice(0, 5000)
-      });
-    }
+    // Also re-check if the previously stored holdings list is empty — this
+    // catches cases like our own earlier testing, where a parsing bug saved
+    // an empty list under a valid date; without this, a same-date match would
+    // wrongly be treated as "nothing to do" forever.
+    const isNewer = !stored || !asOf || asOf !== stored.asOfDate || !stored.holdings || stored.holdings.length === 0;
 
     if (isNewer) {
       const holdings = parseCefConnectTopHoldings(html);
