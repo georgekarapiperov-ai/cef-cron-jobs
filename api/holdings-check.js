@@ -148,7 +148,7 @@ async function checkOne(ticker) {
   const stored = await getStoredHoldings(ticker);
 
   try {
-    const html = await fetchText(`${CEFCONNECT_BASE}${ticker}`);
+    const html = await fetchText(`${CEFCONNECT_BASE}${ticker}?view=fund`);
     const asOf = parseCefConnectHoldingsDate(html);
     const isNewer = !stored || !asOf || asOf !== stored.asOfDate;
 
@@ -157,12 +157,13 @@ async function checkOne(ticker) {
     // write a regex that matches it — instead of guessing again. Remove this
     // block once parseCefConnectTopHoldings is confirmed working.
     if (ticker === "USA") {
-      const idx = html.indexOf("Holdings");
+      let idx = html.indexOf("Top Holdings");
+      if (idx < 0) idx = html.indexOf("Holdings");
       await kv.set("debug:raw-html-sample", {
         ticker,
         htmlLength: html.length,
         holdingsWordIndex: idx,
-        sample: idx >= 0 ? html.slice(idx, idx + 3000) : html.slice(0, 3000)
+        sample: idx >= 0 ? html.slice(idx, idx + 5000) : html.slice(0, 5000)
       });
     }
 
