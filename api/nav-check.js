@@ -40,10 +40,20 @@ const CEFDATA_BASE = "https://cefdata.com/funds/";      // verify exact path per
 const CEFCONNECT_BASE = "https://www.cefconnect.com/fund/";
 const YAHOO_CHART_BASE = "https://query1.finance.yahoo.com/v8/finance/chart/"; // same endpoint used by api-quote-proxy.js
 
-async function fetchText(url) {
-  const res = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0 (compatible; CEFDeskBot/1.0)" } });
-  if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
-  return res.text();
+async function fetchText(url, timeoutMs = 8000) {
+  // Same per-request timeout fix as holdings-check.js — see comment there.
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, {
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; CEFDeskBot/1.0)" },
+      signal: controller.signal
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
+    return await res.text();
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 function parseCefDataNav(html) {
@@ -65,9 +75,13 @@ function parseCefConnectOverview(html) {
 
 async function fetchMarketPrice52wRange(ticker) {
   try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 8000);
     const res = await fetch(`${YAHOO_CHART_BASE}${encodeURIComponent(ticker)}?range=1y&interval=1d`, {
-      headers: { "User-Agent": "Mozilla/5.0" }
+      headers: { "User-Agent": "Mozilla/5.0" },
+      signal: controller.signal
     });
+    clearTimeout(timer);
     const data = await res.json();
     const meta = data?.chart?.result?.[0]?.meta;
     return meta ? { high: meta.fiftyTwoWeekHigh ?? null, low: meta.fiftyTwoWeekLow ?? null } : null;
