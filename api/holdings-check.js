@@ -159,7 +159,7 @@ async function checkOne(ticker) {
         await logAlert(ticker, `Holdings changed — added: [${diff.added.join(", ")}], removed: [${diff.removed.join(", ")}]`);
       }
       await saveHoldings(ticker, asOf, holdings, "cefconnect");
-      return { ticker, updated: true, source: "cefconnect", changed: diff.changed };
+      return { ticker, updated: true, source: "cefconnect", changed: diff.changed, holdingsFound: holdings.length };
     }
 
     // CEFConnect date hasn't moved — try the sponsor site if we have one on file.
