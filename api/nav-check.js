@@ -178,11 +178,11 @@ async function checkOneNav(ticker) {
 }
 
 async function runNavCheck() {
-  const results = [];
-  for (const ticker of WATCHLIST) {
-    results.push(await checkOneNav(ticker));
-    await new Promise(r => setTimeout(r, 600));
-  }
+  // Same fix as holdings-check.js: run concurrently instead of one-at-a-time
+  // with delays, since sequential-with-delay was exceeding Vercel's time
+  // limit. Same scaling note applies once WATCHLIST grows to all 86 —
+  // batch into groups of ~15 rather than firing all 86 at once.
+  const results = await Promise.all(WATCHLIST.map(ticker => checkOneNav(ticker)));
   return results;
 }
 
