@@ -98,7 +98,8 @@ async function fetchMarketPrice52wRange(ticker) {
   try {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 8000);
-    const res = await fetch(`${YAHOO_CHART_BASE}${encodeURIComponent(ticker)}?range=1y&interval=1d`, {
+    const yahooTicker = ticker.replace(/\./g, "-"); // BRK.A -> BRK-A, same fix as api/quote.js
+    const res = await fetch(`${YAHOO_CHART_BASE}${encodeURIComponent(yahooTicker)}?range=1y&interval=1d`, {
       headers: { "User-Agent": "Mozilla/5.0" },
       signal: controller.signal
     });
