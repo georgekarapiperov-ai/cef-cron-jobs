@@ -43,7 +43,12 @@ export default async function handler(req, res) {
   }
 
   try {
-    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=1d&interval=1m&includePrePost=true`;
+    // Yahoo Finance uses hyphens for share classes (BRK-A, BRK-B) where our
+    // data uses periods (BRK.A, BRK.B) — convert before building the URL,
+    // but keep the ORIGINAL symbol in the response so the frontend's own
+    // lookup-by-ticker still matches correctly.
+    const yahooSymbol = symbol.replace(/\./g, "-");
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooSymbol)}?range=1d&interval=1m&includePrePost=true`;
     const raw = await fetchText(url);
     const data = JSON.parse(raw);
     const meta = data?.chart?.result?.[0]?.meta;
