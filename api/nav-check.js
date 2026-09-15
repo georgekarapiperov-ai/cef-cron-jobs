@@ -74,6 +74,17 @@ function parseCefDataOverview(html) {
   // This is fragile in the sense that it depends on cefdata.com's internal
   // data format staying the same shape — if it ever stops matching, that's
   // the likely reason, not a logic bug.
+  //
+  // RATE-LIMIT GUARD (added 2026-09-15): cefdata.com throttles heavy traffic
+  // with a "Too many requests" overlay — but the underlying page can still
+  // contain OLD cached embedded data that matches the regex above, which
+  // caused a real stale-NAV bug (UTG showed a NAV over a dollar off from
+  // reality). If we see the rate-limit text anywhere on the page, treat the
+  // whole response as untrustworthy and fall back to CEFConnect instead of
+  // risking silently-stale data.
+  if (/too many requests/i.test(html) || /temporary rate limit/i.test(html)) {
+    return null;
+  }
   const m = html.match(/\d+,"(\d{4}-\d{2}-\d{2})","(\d+\.\d+)","(\d+\.\d+)","(-?\d+\.\d+)"/);
   if (!m) return null;
   return {
@@ -220,13 +231,16 @@ function chunk(arr, size) {
 }
 
 async function runNavCheck() {
-  // Batches of 15, same reasoning as holdings-check.js — avoids looking like
-  // abusive traffic to cefdata.com/CEFConnect at full 86-at-once scale.
-  const batches = chunk(WATCHLIST, 15);
+  // Batch size reduced from 15 to 6 (2026-09-15) after discovering
+  // cefdata.com actively rate-limits ("Too many requests") under bursts of
+  // concurrent traffic — smaller batches, with a short pause between them,
+  // means fewer simultaneous hits and a much lower chance of tripping it.
+  const batches = chunk(WATCHLIST, 6);
   const results = [];
   for (const batch of batches) {
     const batchResults = await Promise.all(batch.map(ticker => checkOneNav(ticker)));
     results.push(...batchResults);
+    await new Promise(r => setTimeout(r, 500)); // brief pause between batches
   }
   return results;
 }
