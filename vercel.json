@@ -8,4 +8,4 @@
     "api/nav-check.js": { "maxDuration": 250 },
     "api/news-check.js": { "maxDuration": 60 }
   }
-
+}
