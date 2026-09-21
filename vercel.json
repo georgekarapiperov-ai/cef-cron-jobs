@@ -6,6 +6,12 @@
   "functions": {
     "api/holdings-check.js": { "maxDuration": 180 },
     "api/nav-check.js": { "maxDuration": 250 },
-    "api/news-check.js": { "maxDuration": 60 }
+    "api/news-newsfilter.js": { "maxDuration": 60 },
+    "api/news-yahoo.js": { "maxDuration": 60 },
+    "api/news-google.js": { "maxDuration": 60 },
+    "api/news-stocktwits.js": { "maxDuration": 60 },
+    "api/news-alphavantage.js": { "maxDuration": 60 },
+    "api/news-finviz.js": { "maxDuration": 120 },
+    "api/news-secedgar.js": { "maxDuration": 180 }
   }
 }
