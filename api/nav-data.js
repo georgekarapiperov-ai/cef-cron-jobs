@@ -11,6 +11,13 @@
 // fetching all 86 keys in one batched call so the browser only needs one
 // request, not 86.
 //
+// CACHE FIX (2026-09-22): this endpoint sent no Cache-Control header, which
+// let browsers apply their own heuristic caching to the GET response —
+// meaning the frontend could silently serve a stale cached copy for some
+// funds while others (fetched when their cache happened to expire) showed
+// current data. Explicitly disabling caching here guarantees every request
+// hits KV fresh, no matter what the browser would otherwise assume.
+//
 // WHERE TO PUT IT: api/nav-data.js at the root of your cef-cron-jobs repo.
 
 import { kv } from "@vercel/kv";
@@ -30,6 +37,7 @@ const WATCHLIST = [
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET");
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
   try {
     const keys = WATCHLIST.map(t => `nav-current:${t}`);
     const values = await kv.mget(...keys);
