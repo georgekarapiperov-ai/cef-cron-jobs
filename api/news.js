@@ -1,14 +1,10 @@
 // api/news.js  (plain Vercel Serverless Function)
 //
 // WHAT THIS DOES: reads all 7 sources' separately-saved data and merges it
-// into one combined per-ticker view for the frontend tool — this is where
-// "many independent sources" becomes "one clean answer" for whoever's
-// displaying it. Merging happens HERE, at read time, specifically because
-// each source writes independently and might run at any moment; combining
-// only when someone actually asks for the data sidesteps any timing issues
-// between writers entirely.
+// into one combined per-ticker view for the frontend tool.
 
 import { kv } from "@vercel/kv";
+import { isRelevant } from "../lib/news-shared.js";
 
 const SOURCES = ["newsfilter", "yahoo", "google", "stocktwits", "finviz", "alphavantage", "secedgar"];
 
@@ -16,9 +12,40 @@ export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET");
   res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+
+  // ONE-TIME CLEANUP MODE (2026-09-22): visit /api/news?cleanup=1 once to
+  // re-apply the relevance filter to everything already saved in KV,
+  // stripping out old junk that predates the filter. Remove this whole
+  // block (and the isRelevant import above) after running it once — this
+  // is bolted onto the read endpoint instead of its own file purely to
+  // avoid using up another one of the 12 function slots on Hobby for a
+  // one-time job.
+  if (req.query.cleanup === "1") {
+    const report = {};
+    let totalRemoved = 0;
+    for (const source of SOURCES) {
+      const key = `news:source:${source}`;
+      const data = await kv.get(key);
+      if (!data) { report[source] = { removed: 0, note: "no data" }; continue; }
+      const updated = {};
+      let removedForSource = 0;
+      for (const ticker of Object.keys(data)) {
+        const entry = data[ticker];
+        const items = entry?.items || [];
+        const kept = items.filter(i => isRelevant(i, ticker));
+        removedForSource += items.length - kept.length;
+        if (kept.length > 0) updated[ticker] = { ...entry, items: kept };
+      }
+      await kv.set(key, updated);
+      report[source] = { removed: removedForSource };
+      totalRemoved += removedForSource;
+    }
+    return res.status(200).json({ ok: true, mode: "cleanup", totalRemoved, report });
+  }
+
   try {
     const sourceData = await Promise.all(SOURCES.map(s => kv.get(`news:source:${s}`)));
-    const combined = {}; // ticker -> [items...]
+    const combined = {};
 
     sourceData.forEach((data, i) => {
       if (!data) return;
@@ -41,7 +68,7 @@ export default async function handler(req, res) {
       }
       const sorted = deduped
         .sort((a, b) => (b.pubDate || "").localeCompare(a.pubDate || ""))
-        .slice(0, 20); // final cap across all sources combined, for one ticker
+        .slice(0, 20);
       news[ticker] = {
         items: sorted,
         hasRecentNews: sorted.some(i => i.pubDate && (Date.now() - new Date(i.pubDate).getTime()) < 24 * 60 * 60 * 1000)
