@@ -10,7 +10,7 @@
 import { WATCHLIST, chunk, fetchText, mergeAndSaveSource } from "../lib/news-shared.js";
 import { kv } from "@vercel/kv";
 
-const SEC_USER_AGENT = "CEFDeskNewsBot YOUR_REAL_EMAIL_HERE"; // <-- REPLACE THIS with your actual email before committing
+const SEC_USER_AGENT = "CEFDeskNewsBot g_karapiperov@abv.bg"; // <-- REPLACE THIS with your actual email before committing
 
 async function getTickerToCikMap() {
   const cached = await kv.get("sec:ticker-cik-map");
