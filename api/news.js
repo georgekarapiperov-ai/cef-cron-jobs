@@ -13,13 +13,10 @@ export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Methods", "GET");
   res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
 
-  // ONE-TIME CLEANUP MODE (2026-09-22): visit /api/news?cleanup=1 once to
-  // re-apply the relevance filter to everything already saved in KV,
-  // stripping out old junk that predates the filter. Remove this whole
-  // block (and the isRelevant import above) after running it once — this
-  // is bolted onto the read endpoint instead of its own file purely to
-  // avoid using up another one of the 12 function slots on Hobby for a
-  // one-time job.
+  // ONE-TIME CLEANUP MODE: visit /api/news?cleanup=1 once to re-apply the
+  // relevance filter to everything already saved in KV, stripping out old
+  // junk that predates the filter. Remove this whole block (and the
+  // isRelevant import above) after running it once.
   if (req.query.cleanup === "1") {
     const report = {};
     let totalRemoved = 0;
