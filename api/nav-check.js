@@ -30,6 +30,18 @@
 // its exact HTML structure the way I did for CEFConnect, so treat
 // parseCefDataNav() as a first draft to test and adjust, not a guarantee.
 //
+// STALE-CACHE RETRY GUARD (added 2026-09-25)
+// cefdata.com can serve a page that parses successfully but contains an OLD
+// cached NAV value — not the "Too many requests" error page (that case was
+// already handled separately below), just a normal-looking page with a wrong
+// number on it. The only symptom is the fetched value being suspiciously
+// identical to what was already saved from a PRIOR day. So: fetch once,
+// compare against the last saved snapshot, and if it's an exact repeat of an
+// older value (not something already confirmed today), wait a few seconds
+// and try that one fund again before trusting it. This won't catch every
+// case — a fund can genuinely have a flat NAV two days running — but it
+// catches the common stale-cache pattern without needing a manual re-run.
+//
 // STORAGE: uses Vercel KV, same as holdings-check.js — turn it on once in
 // your Vercel dashboard's Storage tab (Create Database → KV) and both files
 // share it automatically. Run: npm install @vercel/kv
@@ -123,17 +135,13 @@ async function fetchMarketPrice52wRange(ticker) {
   }
 }
 
-// --- real Vercel KV storage (was a stub — now actually persists) ---
+// --- real Vercel KV storage ---
 async function getNavHistory(ticker) {
-  // Stored as a sorted-by-date list under one key per fund. For 86 funds at
-  // one entry/day this stays small for years — no need for a heavier DB.
   const raw = await kv.get(`nav-history:${ticker}`);
   return raw || []; // shape: [{ date: "2026-09-08", nav: 26.62 }, ...]
 }
 async function appendNavHistory(ticker, date, nav, source) {
   const history = await getNavHistory(ticker);
-  // Replace today's entry if this ticker was already checked today (avoids
-  // duplicate rows if the job is ever re-run manually the same day).
   const filtered = history.filter(h => h.date !== date);
   filtered.push({ date, nav, source });
   filtered.sort((a, b) => a.date.localeCompare(b.date));
@@ -166,10 +174,13 @@ const WATCHLIST = [
   "BTO", "SCD", "CII", "NCV", "CGO", "STEW"
 ];
 
-async function checkOneNav(ticker) {
+// Pulls a fresh NAV/price/discount reading for one fund from CEFdata first,
+// falling back to CEFConnect. Returns null if neither source produced a
+// usable value. Split out from checkOneNav so the stale-cache guard below
+// can call it twice (once, then a retry) without duplicating this logic.
+async function fetchNavOnce(ticker) {
   let nav = null, source = null, sharePrice = null, premDisc = null;
 
-  // Try CEFdata first, per your preference for speed.
   try {
     const url = `${CEFDATA_BASE}${ticker.toLowerCase()}`;
     const html = await fetchText(url);
@@ -182,7 +193,6 @@ async function checkOneNav(ticker) {
     }
   } catch { /* fall through to CEFConnect */ }
 
-  // Fall back to CEFConnect if CEFdata didn't have it yet today.
   if (!nav) {
     try {
       const html = await fetchText(`${CEFCONNECT_BASE}${ticker}`);
@@ -193,59 +203,31 @@ async function checkOneNav(ticker) {
         premDisc = overview.premiumDiscountPct;
         source = "cefconnect";
       }
-    } catch (err) {
-      return { ticker, ok: false, error: err.message };
+    } catch {
+      return null;
     }
   }
 
-  if (!nav) return { ticker, ok: false, error: "no NAV found on either source" };
+  if (!nav) return null;
+  return { nav, sharePrice, premDisc, source };
+}
 
+async function checkOneNav(ticker) {
+  const previous = await kv.get(`nav-current:${ticker}`);
   const today = new Date().toISOString().slice(0, 10);
-  await appendNavHistory(ticker, today, nav, source); // this now includes today's entry when read back
 
-  const history = await getNavHistory(ticker);
-  const navRange = compute52wNavRange(history);
-  const priceRange = await fetchMarketPrice52wRange(ticker);
+  let result = await fetchNavOnce(ticker);
+  if (!result) return { ticker, ok: false, error: "no NAV found on either source" };
 
-  const snapshot = {
-    ticker,
-    nav,
-    sharePrice,
-    premiumDiscountPct: premDisc,
-    navAsOf: today,
-    source,
-    navHigh52w_partial: navRange.high,
-    navLow52w_partial: navRange.low,
-    navHistoryDays: navRange.daysOfHistory,
-    priceHigh52w: priceRange?.high ?? null,
-    priceLow52w: priceRange?.low ?? null
-  };
-  await saveCurrentSnapshot(ticker, snapshot);
-  return { ticker, ok: true, ...snapshot };
-}
+  // Stale-cache guard: only fires if what we just fetched exactly matches
+  // something already saved from a DIFFERENT (earlier) day — that's the
+  // signature of a cached old page, not a genuine fresh read.
+  const looksStale = previous
+    && previous.navAsOf !== today
+    && previous.nav === result.nav
+    && previous.sharePrice === result.sharePrice;
 
-function chunk(arr, size) {
-  const out = [];
-  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
-  return out;
-}
-
-async function runNavCheck() {
-  // Batch size reduced from 15 to 6 (2026-09-15) after discovering
-  // cefdata.com actively rate-limits ("Too many requests") under bursts of
-  // concurrent traffic — smaller batches, with a short pause between them,
-  // means fewer simultaneous hits and a much lower chance of tripping it.
-  const batches = chunk(WATCHLIST, 6);
-  const results = [];
-  for (const batch of batches) {
-    const batchResults = await Promise.all(batch.map(ticker => checkOneNav(ticker)));
-    results.push(...batchResults);
-    await new Promise(r => setTimeout(r, 500)); // brief pause between batches
-  }
-  return results;
-}
-
-export default async function handler(req, res) {
-  const results = await runNavCheck();
-  res.status(200).json({ ok: true, checked: results.length, results });
-}
+  if (looksStale) {
+    await new Promise(r => setTimeout(r, 4000));
+    const retryResult = await fetchNavOnce(ticker);
+    if (retryResult && (retryResult.nav !== result.nav ||
