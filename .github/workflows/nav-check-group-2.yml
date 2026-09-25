@@ -1,0 +1,13 @@
+name: Nav Check - Group 2
+
+on:
+  schedule:
+    - cron: "20 8 * * 1-5"
+  workflow_dispatch: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger nav-check for group 2
+        run: curl -sS "https://cef-cron-jobs.vercel.app/api/nav-check?group=2"
