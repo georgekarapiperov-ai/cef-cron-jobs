@@ -1,59 +1,46 @@
 // api/nav-check.js  (plain Vercel Serverless Function — no framework needed)
 //
-// RUNS: 11:00am daily (see vercel.json in api-cron-holdings-check.js)
+// RUNS: via 4 separate GitHub Actions schedules, each calling this same
+// endpoint with a different ?group=1..4 query param (added 2026-09-25 when
+// the watchlist grew from 86 to 353 funds — one run covering all of them
+// risked exceeding the function's time limit, so it's now split into 4
+// batches of ~88 funds each, staggered through the day). If no ?group is
+// given, it defaults to running ALL funds (useful for manual full re-runs
+// like the FT stale-cache fix earlier).
 //
 // WHAT THIS DOES
-//   1. Fetches current NAV for every fund — tries CEFdata.com FIRST (per your
-//      note that it publishes faster than CEFConnect some days), falls back
-//      to CEFConnect if CEFdata doesn't have it yet.
+//   1. Fetches current NAV for every fund in the selected group — tries
+//      CEFdata.com FIRST, falls back to CEFConnect if CEFdata doesn't have
+//      it yet.
 //   2. Appends today's NAV to a running history table (one row per fund per day).
 //   3. Recomputes each fund's 52-week NAV high/low from that history.
-//   4. Also grabs the MARKET-PRICE 52-week high/low from Yahoo's chart
-//      endpoint — this one's free and instant since every stock quote API
-//      already tracks it; it's just not the same thing as NAV.
+//   4. Grabs the MARKET-PRICE 52-week high/low from Yahoo's chart endpoint.
+//   5. NEW (2026-09-25): fetches CEFConnect's "Category:" field for each
+//      fund and buckets it into a simple assetClass tag (Bond, Preferred,
+//      Convertible, Equity, or Mixed) — this is the "do they own bonds or
+//      preferred stock" signal, without needing a full per-sponsor holdings
+//      scraper for every new fund.
 //
 // THE HONEST PART, READ BEFORE TRUSTING THE NAV 52W NUMBERS:
 // Nobody publishes "52-week NAV high/low" for closed-end funds as a ready
-// field — I checked. Market-price 52w range is standard (every broker shows
-// it), but NAV history has to be built from daily snapshots. That means:
-//   - Day 1 after this job goes live: navHigh52w == navLow52w == today's NAV
-//     (there's only one data point).
-//   - It gets MORE accurate every day as history accumulates.
-//   - It becomes a genuine trailing-365-day range only after ~12 months.
-// The stored fields below are named navHigh52w_partial / navLow52w_partial
-// until the history table has >= 365 rows for that fund, at which point you
-// can rename them with confidence. Don't present these as a true 52-week
-// range to anyone before that point without the same caveat.
+// field. NAV history has to be built from daily snapshots — it becomes a
+// genuine trailing-365-day range only after ~12 months. Fields are named
+// navHigh52w_partial / navLow52w_partial for this reason.
 //
-// CEFDATA.COM CAVEAT
-// Like CEFConnect, this is scraping an undocumented page — I haven't verified
-// its exact HTML structure the way I did for CEFConnect, so treat
-// parseCefDataNav() as a first draft to test and adjust, not a guarantee.
+// STALE-CACHE RETRY GUARD (added 2026-09-25): cefdata.com can serve a page
+// that parses successfully but contains an OLD cached NAV value. If the
+// fetched value exactly matches what was already saved from a PRIOR day,
+// wait a few seconds and try that one fund again before trusting it.
 //
-// STALE-CACHE RETRY GUARD (added 2026-09-25)
-// cefdata.com can serve a page that parses successfully but contains an OLD
-// cached NAV value — not the "Too many requests" error page (that case was
-// already handled separately below), just a normal-looking page with a wrong
-// number on it. The only symptom is the fetched value being suspiciously
-// identical to what was already saved from a PRIOR day. So: fetch once,
-// compare against the last saved snapshot, and if it's an exact repeat of an
-// older value (not something already confirmed today), wait a few seconds
-// and try that one fund again before trusting it. This won't catch every
-// case — a fund can genuinely have a flat NAV two days running — but it
-// catches the common stale-cache pattern without needing a manual re-run.
-//
-// STORAGE: uses Vercel KV, same as holdings-check.js — turn it on once in
-// your Vercel dashboard's Storage tab (Create Database → KV) and both files
-// share it automatically. Run: npm install @vercel/kv
+// STORAGE: uses Vercel KV — npm install @vercel/kv
 
 import { kv } from "@vercel/kv";
 
-const CEFDATA_BASE = "https://cefdata.com/funds/";      // verify exact path per fund before relying on this
+const CEFDATA_BASE = "https://cefdata.com/funds/";
 const CEFCONNECT_BASE = "https://www.cefconnect.com/fund/";
-const YAHOO_CHART_BASE = "https://query1.finance.yahoo.com/v8/finance/chart/"; // same endpoint used by api-quote-proxy.js
+const YAHOO_CHART_BASE = "https://query1.finance.yahoo.com/v8/finance/chart/";
 
 async function fetchText(url, timeoutMs = 20000) {
-  // Same per-request timeout fix as holdings-check.js — see comment there.
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -78,22 +65,6 @@ async function fetchText(url, timeoutMs = 20000) {
 }
 
 function parseCefDataOverview(html) {
-  // CONFIRMED WORKING (2026-09-11) against real cefdata.com output. This
-  // matches an internal data structure embedded in the page's JavaScript
-  // framework payload (not a documented API) — a sequence of raw volume
-  // number, then quoted date/price/nav/discount strings in that exact order:
-  //   3616192,"2026-09-10","5.85","6.66","-12.1621621621621621216"
-  // This is fragile in the sense that it depends on cefdata.com's internal
-  // data format staying the same shape — if it ever stops matching, that's
-  // the likely reason, not a logic bug.
-  //
-  // RATE-LIMIT GUARD (added 2026-09-15): cefdata.com throttles heavy traffic
-  // with a "Too many requests" overlay — but the underlying page can still
-  // contain OLD cached embedded data that matches the regex above, which
-  // caused a real stale-NAV bug (UTG showed a NAV over a dollar off from
-  // reality). If we see the rate-limit text anywhere on the page, treat the
-  // whole response as untrustworthy and fall back to CEFConnect instead of
-  // risking silently-stale data.
   if (/too many requests/i.test(html) || /temporary rate limit/i.test(html)) {
     return null;
   }
@@ -117,11 +88,29 @@ function parseCefConnectOverview(html) {
   };
 }
 
+// Extracts CEFConnect's "Category:" text and buckets it into a simple
+// assetClass tag. Loose regex on purpose — CEFConnect's basics table cell
+// structure isn't documented, so this matches whatever text sits between
+// "Category:" and the following "Ticker:" label, tags and all, then strips
+// tags before classifying.
+function parseAssetClass(html) {
+  const m = html.match(/Category:[\s\S]{0,20}?([\s\S]{0,200}?)Ticker:/);
+  if (!m) return { categoryRaw: null, assetClass: null };
+  const raw = m[1].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+  const c = raw.toLowerCase();
+  let assetClass = "Mixed";
+  if (/preferred/.test(c)) assetClass = "Preferred";
+  else if (/convertible/.test(c)) assetClass = "Convertible";
+  else if (/fixed income|bond|municipal|loan|high yield|government|mortgage/.test(c)) assetClass = "Bond";
+  else if (/equity|growth|utility|real estate|reit|healthcare|technology|energy|commodit|world|global/.test(c)) assetClass = "Equity";
+  return { categoryRaw: raw || null, assetClass };
+}
+
 async function fetchMarketPrice52wRange(ticker) {
   try {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 8000);
-    const yahooTicker = ticker.replace(/\./g, "-"); // BRK.A -> BRK-A, same fix as api/quote.js
+    const yahooTicker = ticker.replace(/\./g, "-");
     const res = await fetch(`${YAHOO_CHART_BASE}${encodeURIComponent(yahooTicker)}?range=1y&interval=1d`, {
       headers: { "User-Agent": "Mozilla/5.0" },
       signal: controller.signal
@@ -135,10 +124,9 @@ async function fetchMarketPrice52wRange(ticker) {
   }
 }
 
-// --- real Vercel KV storage ---
 async function getNavHistory(ticker) {
   const raw = await kv.get(`nav-history:${ticker}`);
-  return raw || []; // shape: [{ date: "2026-09-08", nav: 26.62 }, ...]
+  return raw || [];
 }
 async function appendNavHistory(ticker, date, nav, source) {
   const history = await getNavHistory(ticker);
@@ -146,11 +134,9 @@ async function appendNavHistory(ticker, date, nav, source) {
   filtered.push({ date, nav, source });
   filtered.sort((a, b) => a.date.localeCompare(b.date));
   await kv.set(`nav-history:${ticker}`, filtered);
-  console.log(`[nav-check] ${ticker}: NAV $${nav} on ${date} (source: ${source}), history now ${filtered.length} days`);
 }
 async function saveCurrentSnapshot(ticker, row) {
   await kv.set(`nav-current:${ticker}`, row);
-  console.log(`[nav-check] ${ticker}: saved current snapshot`);
 }
 
 function compute52wNavRange(history) {
@@ -162,6 +148,7 @@ function compute52wNavRange(history) {
   return { high: Math.max(...values), low: Math.min(...values), daysOfHistory: recent.length };
 }
 
+// Full 353-fund watchlist. Split into 4 groups below for scheduled batch runs.
 const WATCHLIST = [
   "USA", "UTG", "UTF", "DNP", "BUI", "MEGI", "GLU", "DPG", "ERH", "PEO",
   "BGR", "NXG", "EMO", "BCX", "RQI", "RNP", "RFI", "JRS", "JRI", "AWP",
@@ -171,13 +158,53 @@ const WATCHLIST = [
   "RIV", "ETG", "AGD", "NFJ", "BTX", "ETY", "CHI", "GLQ", "ETV", "ETW",
   "ETJ", "ADX", "ASG", "AOD", "EOI", "FT", "CHW", "GAB", "EOS", "EXG",
   "CSQ", "CPZ", "NMAI", "BOE", "CLM", "CRF", "CHY", "FFA", "ACV", "QQQX",
-  "BTO", "SCD", "CII", "NCV", "CGO", "STEW"
+  "BTO", "SCD", "CII", "NCV", "CGO", "STEW",
+  "HIX", "NMZ", "ACP", "TEI", "MMU", "NAD", "FSCO", "JQC", "JFR", "PHK",
+  "NDMO", "PPT", "NZF", "VGM", "MMT", "GOF", "BPRE", "BTT", "RLTY", "NUV",
+  "NMCO", "PML", "FPF", "JPC", "NVG", "NBB", "IGD", "NPFD", "ERC", "CIK",
+  "NEA", "DHY", "VKI", "BGT", "DSU", "HGLB", "CEF", "IIM", "FTF", "MUC",
+  "VGI", "PDI", "PCQ", "BDJ", "FRA", "EFR", "EARN", "FFC", "IGA", "GHY",
+  "BBN", "WIW", "NAC", "NKX", "OIA", "BGB", "KIO", "IDE", "PFL", "KTF",
+  "BIT", "GGT", "PTY", "EVT", "MMD", "EAD", "PDT", "GLO", "DLY", "DSL",
+  "EVV", "MFM", "VVR", "IQI", "EMD", "MCN", "ZTR", "OPP", "MUJ", "CCIF",
+  "BGY", "MHD", "MGF", "DFP", "FSSL", "EDF", "LDP", "PTA", "FTHY", "SWZ",
+  "BLW", "NHS", "EOD", "MUA", "HPS", "EFT", "VMO", "IFN", "DXYZ", "MQY",
+  "BKT", "BGX", "HFRO", "JLS", "VKQ", "NRK", "PFN", "PSUS", "RA", "MHF",
+  "ARDC", "EVN", "SPE", "BGH", "RMM", "HTD", "EIM", "HYT", "NAN", "PFD",
+  "ASGI", "KF", "EHI", "LEO", "HYI", "ECF", "PDO", "BHK", "MCI", "EIC",
+  "AWF", "DBL", "VBF", "PCM", "EVF", "FLC", "EVG", "RSF", "AEF", "IAE",
+  "WDI", "GUG", "ISD", "FAX", "VLT", "NPCT", "RVI", "RFMZ", "GLV", "TDF",
+  "PSF", "VCV", "EDD", "PGP", "JGH", "PCN", "MYI", "DMB", "GUT", "DHF",
+  "EOT", "GDL", "NXP", "CET", "HPI", "TPZ", "EMF", "RCS", "IIF", "DMA",
+  "HIO", "CFND", "PAXS", "BTZ", "IGR", "DSM", "SCOP", "FINS", "BRW", "NXDT",
+  "SPMC", "NAZ", "DMO", "GBAB", "GDO", "BWG", "AFB", "WIA", "TWN", "ECC",
+  "RVII", "MXF", "GCV", "RGT", "GRX", "HPF", "GGZ", "PCF", "VTN", "NBH",
+  "JHI", "NRO", "ASA", "DTF", "TSI", "MYN", "NMS", "MSD", "PGZ", "MIY",
+  "PFO", "JOF", "TBLD", "JMM", "JHS", "PAI", "IGI", "ETX", "FMN", "WEA",
+  "FMY", "FOF", "VPV", "EEA", "FUND", "GAM", "GF", "GRF", "HEQ", "HERZ",
+  "IAF", "XFLT", "SOR", "SABA", "CEV", "PWRL", "BANX", "NMT", "NNY", "BOT",
+  "PNI", "PMO", "NPV", "PIM", "NSLR", "BMN", "NUW", "OCCI", "PMM", "SDHY",
+  "NMI", "BSL", "MIN", "SBI", "BHV", "CEE", "MPA", "MPV", "RCG", "RMMZ",
+  "RMI", "CAF", "NCA", "NIM", "RFM", "MXE", "IHD"
 ];
 
-// Pulls a fresh NAV/price/discount reading for one fund from CEFdata first,
-// falling back to CEFConnect. Returns null if neither source produced a
-// usable value. Split out from checkOneNav so the stale-cache guard below
-// can call it twice (once, then a retry) without duplicating this logic.
+function chunk(arr, size) {
+  const out = [];
+  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+  return out;
+}
+
+// Splits WATCHLIST into 4 roughly-equal groups by taking every 4th ticker
+// (interleaved rather than sliced in blocks, so each group gets a similar
+// mix of "usually fast" and "usually slow" sources rather than one group
+// getting unlucky).
+function getGroup(groupNum) {
+  if (!groupNum) return WATCHLIST; // no group specified = run everything (manual full re-run)
+  const idx = parseInt(groupNum, 10) - 1;
+  if (isNaN(idx) || idx < 0 || idx > 3) return WATCHLIST;
+  return WATCHLIST.filter((_, i) => i % 4 === idx);
+}
+
 async function fetchNavOnce(ticker) {
   let nav = null, source = null, sharePrice = null, premDisc = null;
 
@@ -193,6 +220,8 @@ async function fetchNavOnce(ticker) {
     }
   } catch { /* fall through to CEFConnect */ }
 
+  let categoryRaw = null, assetClass = null;
+
   if (!nav) {
     try {
       const html = await fetchText(`${CEFCONNECT_BASE}${ticker}`);
@@ -203,13 +232,25 @@ async function fetchNavOnce(ticker) {
         premDisc = overview.premiumDiscountPct;
         source = "cefconnect";
       }
+      const ac = parseAssetClass(html);
+      categoryRaw = ac.categoryRaw;
+      assetClass = ac.assetClass;
     } catch {
       return null;
     }
+  } else {
+    // CEFdata succeeded for NAV, but asset-class only comes from CEFConnect's
+    // Category field — fetch it separately (cheap, doesn't need to succeed).
+    try {
+      const html = await fetchText(`${CEFCONNECT_BASE}${ticker}`);
+      const ac = parseAssetClass(html);
+      categoryRaw = ac.categoryRaw;
+      assetClass = ac.assetClass;
+    } catch { /* asset class stays null, not fatal */ }
   }
 
   if (!nav) return null;
-  return { nav, sharePrice, premDisc, source };
+  return { nav, sharePrice, premDisc, source, categoryRaw, assetClass };
 }
 
 async function checkOneNav(ticker) {
@@ -219,9 +260,6 @@ async function checkOneNav(ticker) {
   let result = await fetchNavOnce(ticker);
   if (!result) return { ticker, ok: false, error: "no NAV found on either source" };
 
-  // Stale-cache guard: only fires if what we just fetched exactly matches
-  // something already saved from a DIFFERENT (earlier) day — that's the
-  // signature of a cached old page, not a genuine fresh read.
   const looksStale = previous
     && previous.navAsOf !== today
     && previous.nav === result.nav
@@ -230,4 +268,51 @@ async function checkOneNav(ticker) {
   if (looksStale) {
     await new Promise(r => setTimeout(r, 4000));
     const retryResult = await fetchNavOnce(ticker);
-    if (retryResult && (retryResult.nav !== result.nav ||
+    if (retryResult && (retryResult.nav !== result.nav || retryResult.sharePrice !== result.sharePrice)) {
+      result = retryResult;
+    }
+  }
+
+  const { nav, sharePrice, premDisc, source, categoryRaw, assetClass } = result;
+
+  await appendNavHistory(ticker, today, nav, source);
+
+  const history = await getNavHistory(ticker);
+  const navRange = compute52wNavRange(history);
+  const priceRange = await fetchMarketPrice52wRange(ticker);
+
+  const snapshot = {
+    ticker,
+    nav,
+    sharePrice,
+    premiumDiscountPct: premDisc,
+    navAsOf: today,
+    source,
+    navHigh52w_partial: navRange.high,
+    navLow52w_partial: navRange.low,
+    navHistoryDays: navRange.daysOfHistory,
+    priceHigh52w: priceRange?.high ?? null,
+    priceLow52w: priceRange?.low ?? null,
+    assetClass: assetClass ?? previous?.assetClass ?? null,
+    categoryRaw: categoryRaw ?? previous?.categoryRaw ?? null
+  };
+  await saveCurrentSnapshot(ticker, snapshot);
+  return { ticker, ok: true, ...snapshot };
+}
+
+async function runNavCheck(groupTickers) {
+  const batches = chunk(groupTickers, 6);
+  const results = [];
+  for (const batch of batches) {
+    const batchResults = await Promise.all(batch.map(ticker => checkOneNav(ticker)));
+    results.push(...batchResults);
+    await new Promise(r => setTimeout(r, 500));
+  }
+  return results;
+}
+
+export default async function handler(req, res) {
+  const groupTickers = getGroup(req.query.group);
+  const results = await runNavCheck(groupTickers);
+  res.status(200).json({ ok: true, group: req.query.group || "all", checked: results.length, results });
+}
