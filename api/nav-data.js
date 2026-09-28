@@ -6,17 +6,16 @@
 // instead of the static snapshot baked into that file at build time.
 //
 // nav-check.js saves one KV key per fund (nav-current:TICKER) rather than
-// one combined key — unlike news:all, which was combined from the start for
-// exactly this reason. This endpoint does the combining at READ time instead,
-// fetching all 86 keys in one batched call so the browser only needs one
-// request, not 86.
+// one combined key. This endpoint does the combining at READ time instead,
+// fetching all keys in one batched call so the browser only needs one
+// request, not one per fund.
 //
-// CACHE FIX (2026-09-22): this endpoint sent no Cache-Control header, which
-// let browsers apply their own heuristic caching to the GET response —
-// meaning the frontend could silently serve a stale cached copy for some
-// funds while others (fetched when their cache happened to expire) showed
-// current data. Explicitly disabling caching here guarantees every request
-// hits KV fresh, no matter what the browser would otherwise assume.
+// CACHE FIX (2026-09-22): explicitly disabling caching here guarantees every
+// request hits KV fresh, no matter what the browser would otherwise assume.
+//
+// WATCHLIST EXPANDED (2026-09-25): grew from 86 to 353 funds. This file has
+// its OWN copy of the watchlist, separate from nav-check.js's — they must be
+// kept in sync manually. If you add more funds later, update BOTH files.
 //
 // WHERE TO PUT IT: api/nav-data.js at the root of your cef-cron-jobs repo.
 
@@ -29,24 +28,3 @@ const WATCHLIST = [
   "TY", "STK", "ETO", "LGI", "BST", "BSTZ", "GDV", "NIE", "CCD", "AIO",
   "RMT", "RVT", "NCZ", "AVK", "ECAT", "NBXG", "BCAT", "ETB", "SPXX", "JCE",
   "RIV", "ETG", "AGD", "NFJ", "BTX", "ETY", "CHI", "GLQ", "ETV", "ETW",
-  "ETJ", "ADX", "ASG", "AOD", "EOI", "FT", "CHW", "GAB", "EOS", "EXG",
-  "CSQ", "CPZ", "NMAI", "BOE", "CLM", "CRF", "CHY", "FFA", "ACV", "QQQX",
-  "BTO", "SCD", "CII", "NCV", "CGO", "STEW"
-];
-
-export default async function handler(req, res) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET");
-  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
-  try {
-    const keys = WATCHLIST.map(t => `nav-current:${t}`);
-    const values = await kv.mget(...keys);
-    const nav = {};
-    WATCHLIST.forEach((ticker, i) => {
-      if (values[i]) nav[ticker] = values[i];
-    });
-    res.status(200).json({ ok: true, count: Object.keys(nav).length, nav });
-  } catch (err) {
-    res.status(500).json({ ok: false, error: err.message });
-  }
-}
