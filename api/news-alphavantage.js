@@ -8,7 +8,7 @@
 //
 // Needs ALPHAVANTAGE_API_KEY set in Vercel's environment variables.
 
-import { WATCHLIST, mergeAndSaveSource } from "../lib/news-shared.js";
+   import { CEF_WATCHLIST as WATCHLIST, fetchText, mergeAndSaveSource } from "../lib/news-shared.js";
 
 const ALPHAVANTAGE_API_KEY = process.env.ALPHAVANTAGE_API_KEY;
 
