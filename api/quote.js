@@ -11,7 +11,8 @@
 //   History (Pref Setup tab):    /api/quote?history=TLT,COF-PI&range=6mo   (max 25; range 1mo|3mo|6mo|1y|2y)
 //     → { ok, history: { SYMBOL: { days, close, adj, vol, divs } }, errors }
 //   FRED (Pref Setup tab):       /api/quote?fred=DGS20,BAMLC0A4CBBB   (max 5 series, official Federal Reserve data)
-//     → { ok, fred: { ID: { d: [dates], v: [values] } }, errors }
+//     → { ok, fred: { ID: { d: [dates], v: [values], src } }, errors }
+//     Optional: set FRED_API_KEY in Vercel → Settings → Environment Variables for the most reliable route.
 
 const MAX_BATCH = 30;
 const MAX_HISTORY = 25;
@@ -41,17 +42,66 @@ async function getHistory(symbol, range) {
   return { days, close, adj, vol, divs };
 }
 
-// One FRED series (no API key needed for the CSV download). Keeps the last ~2 years.
-async function getFred(id) {
-  const csv = await fetchText(`https://fred.stlouisfed.org/graph/fredgraph.csv?id=${encodeURIComponent(id)}`, 8000);
+// ---- FRED series: rates & credit spreads ----
+// Route 1: FRED's official API when FRED_API_KEY is set in Vercel (free key from fredaccount.stlouisfed.org).
+// Route 2: FRED's CSV download, last ~2 years only (small and fast).
+// Route 3 (20Y yield only): the U.S. Treasury's own daily yield-curve CSV.
+function isoDaysAgo(n) { return new Date(Date.now() - n * 86400000).toISOString().slice(0, 10); }
+
+async function fredFromApi(id) {
+  const key = process.env.FRED_API_KEY;
+  const url = `https://api.stlouisfed.org/fred/series/observations?series_id=${encodeURIComponent(id)}&api_key=${encodeURIComponent(key)}&file_type=json&observation_start=${isoDaysAgo(760)}`;
+  const j = JSON.parse(await fetchText(url, 5000));
+  const d = [], v = [];
+  (j.observations || []).forEach(o => { const n = parseFloat(o.value); if (!isNaN(n)) { d.push(o.date); v.push(n); } });
+  if (!d.length) throw new Error("FRED API returned no data");
+  return { d, v, src: "FRED API" };
+}
+
+async function fredFromCsv(id) {
+  const csv = await fetchText(`https://fred.stlouisfed.org/graph/fredgraph.csv?id=${encodeURIComponent(id)}&cosd=${isoDaysAgo(760)}`, 5000);
   const d = [], v = [];
   csv.trim().split(/\r?\n/).slice(1).forEach(line => {
     const [date, val] = line.split(",");
     const n = parseFloat(val);
     if (/^\d{4}-\d{2}-\d{2}$/.test(date) && !isNaN(n)) { d.push(date); v.push(n); }
   });
-  if (!d.length) throw new Error("no FRED data");
-  return { d: d.slice(-520), v: v.slice(-520) };
+  if (!d.length) throw new Error("FRED CSV returned no data");
+  return { d, v, src: "FRED" };
+}
+
+async function treasury20y() {
+  const y = new Date().getUTCFullYear();
+  const years = [y, y - 1, y - 2];
+  const rows = new Map();
+  await Promise.all(years.map(async (yr) => {
+    const url = `https://home.treasury.gov/resource-center/data-chart-center/interest-rates/daily-treasury-rates.csv/${yr}/all?type=daily_treasury_yield_curve&field_tdr_date_value=${yr}&page&_format=csv`;
+    const csv = await fetchText(url, 4000);
+    const lines = csv.trim().split(/\r?\n/);
+    const col = lines[0].split(",").map(h => h.replace(/"/g, "").trim()).indexOf("20 Yr");
+    if (col < 0) return;
+    lines.slice(1).forEach(line => {
+      const c = line.split(",");
+      const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(c[0]);
+      const n = parseFloat(c[col]);
+      if (m && !isNaN(n)) rows.set(`${m[3]}-${m[1]}-${m[2]}`, n);
+    });
+  }).map(p => p.catch(() => null)));
+  const d = [...rows.keys()].sort();
+  if (!d.length) throw new Error("Treasury CSV returned no data");
+  return { d, v: d.map(k => rows.get(k)), src: "U.S. Treasury" };
+}
+
+async function getFred(id) {
+  const errs = [];
+  if (process.env.FRED_API_KEY) {
+    try { return await fredFromApi(id); } catch (e) { errs.push("API: " + e.message); }
+  }
+  try { return await fredFromCsv(id); } catch (e) { errs.push("CSV: " + e.message); }
+  if (id === "DGS20") {
+    try { return await treasury20y(); } catch (e) { errs.push("Treasury: " + e.message); }
+  }
+  throw new Error(errs.join(" | "));
 }
 
 async function fetchText(url, timeoutMs = 8000) {
