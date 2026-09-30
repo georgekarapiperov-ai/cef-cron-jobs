@@ -3,13 +3,56 @@
 // WHAT THIS DOES: live quote proxy for cef-inav-estimator.html. The browser
 // can't call Yahoo Finance directly (CORS), so this does the fetch server-side.
 //
-// TWO MODES (one file, so the project stays within Vercel's 12-function limit):
+// FOUR MODES (one file, so the project stays within Vercel's 12-function limit):
 //   Single (CEF tab, unchanged): /api/quote?symbol=AAPL
 //     → { symbol, price, changePercent, marketState }
 //   Batch (Preferreds tab):      /api/quote?symbols=COF,COF-PI,COF-PJ   (max 30)
-//     → { ok, count, quotes: { SYMBOL: { symbol, price, changePercent, marketState } }, errors }
+//     → { ok, count, quotes: { SYMBOL: { symbol, price, changePercent, marketState, volume } }, errors }
+//   History (Pref Setup tab):    /api/quote?history=TLT,COF-PI&range=6mo   (max 25; range 1mo|3mo|6mo|1y|2y)
+//     → { ok, history: { SYMBOL: { days, close, adj, vol, divs } }, errors }
+//   FRED (Pref Setup tab):       /api/quote?fred=DGS20,BAMLC0A4CBBB   (max 5 series, official Federal Reserve data)
+//     → { ok, fred: { ID: { d: [dates], v: [values] } }, errors }
 
 const MAX_BATCH = 30;
+const MAX_HISTORY = 25;
+const RANGES = new Set(["1mo", "3mo", "6mo", "1y", "2y"]);
+
+// Daily history for one ticker: closes, dividend-adjusted closes, volumes, dividends.
+async function getHistory(symbol, range) {
+  const yahooSymbol = symbol.replace(/\./g, "-");
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooSymbol)}?range=${range}&interval=1d&events=div`;
+  const data = JSON.parse(await fetchText(url, 8000));
+  const r = data?.chart?.result?.[0];
+  if (!r || !Array.isArray(r.timestamp)) throw new Error("no history");
+  const q = r.indicators?.quote?.[0] || {};
+  const adjAll = r.indicators?.adjclose?.[0]?.adjclose || [];
+  const days = [], close = [], adj = [], vol = [];
+  r.timestamp.forEach((ts, i) => {
+    const c = q.close?.[i];
+    if (typeof c !== "number") return;
+    days.push(new Date(ts * 1000).toISOString().slice(0, 10));
+    close.push(+c.toFixed(4));
+    adj.push(typeof adjAll[i] === "number" ? +adjAll[i].toFixed(4) : +c.toFixed(4));
+    vol.push(q.volume?.[i] ?? 0);
+  });
+  const divs = Object.values(r.events?.dividends || {})
+    .map(d => ({ date: new Date(d.date * 1000).toISOString().slice(0, 10), amount: d.amount }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+  return { days, close, adj, vol, divs };
+}
+
+// One FRED series (no API key needed for the CSV download). Keeps the last ~2 years.
+async function getFred(id) {
+  const csv = await fetchText(`https://fred.stlouisfed.org/graph/fredgraph.csv?id=${encodeURIComponent(id)}`, 8000);
+  const d = [], v = [];
+  csv.trim().split(/\r?\n/).slice(1).forEach(line => {
+    const [date, val] = line.split(",");
+    const n = parseFloat(val);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(date) && !isNaN(n)) { d.push(date); v.push(n); }
+  });
+  if (!d.length) throw new Error("no FRED data");
+  return { d: d.slice(-520), v: v.slice(-520) };
+}
 
 async function fetchText(url, timeoutMs = 8000) {
   const controller = new AbortController();
@@ -56,13 +99,38 @@ async function getQuote(symbol, timeoutMs) {
     ? (price - prevClose) / prevClose * 100
     : null;
 
-  return { symbol, price: price ?? null, changePercent, marketState: state ?? null };
+  return { symbol, price: price ?? null, changePercent, marketState: state ?? null, volume: meta.regularMarketVolume ?? null };
 }
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET");
   const params = new URL(req.url, "http://x").searchParams;
+
+  // ---- History mode: ?history=A,B&range=6mo ----
+  const hist = req.query?.history || params.get("history");
+  if (hist) {
+    const range = RANGES.has(String(req.query?.range || params.get("range"))) ? String(req.query?.range || params.get("range")) : "6mo";
+    const symbols = [...new Set(String(hist).split(",").map(s => s.trim().toUpperCase()).filter(Boolean))].slice(0, MAX_HISTORY);
+    const history = {}, errors = {};
+    await Promise.all(symbols.map(async (s) => {
+      try { history[s] = await getHistory(s, range); } catch (e) { errors[s] = e.message; }
+    }));
+    res.setHeader("Cache-Control", "s-maxage=3600, stale-while-revalidate=7200");
+    return res.status(200).json({ ok: true, count: Object.keys(history).length, history, errors });
+  }
+
+  // ---- FRED mode: ?fred=DGS20,BAMLC0A4CBBB ----
+  const fred = req.query?.fred || params.get("fred");
+  if (fred) {
+    const ids = [...new Set(String(fred).split(",").map(s => s.trim().toUpperCase()).filter(s => /^[A-Z0-9]+$/.test(s)))].slice(0, 5);
+    const out = {}, errors = {};
+    await Promise.all(ids.map(async (id) => {
+      try { out[id] = await getFred(id); } catch (e) { errors[id] = e.message; }
+    }));
+    res.setHeader("Cache-Control", "s-maxage=3600, stale-while-revalidate=7200");
+    return res.status(200).json({ ok: true, fred: out, errors });
+  }
 
   // ---- Batch mode: ?symbols=A,B,C ----
   const batch = req.query?.symbols || params.get("symbols");
