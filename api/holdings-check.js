@@ -21,7 +21,7 @@ import { kv } from "@vercel/kv";
 
 const CEFCONNECT_BASE = "https://www.cefconnect.com/fund/";
 const YAHOO_SEARCH = "https://query1.finance.yahoo.com/v1/finance/search";
-const MAX_NEW_LOOKUPS_PER_RUN = 700;   // keeps each run well inside the time limit; leftovers are looked up next run
+const MAX_NEW_LOOKUPS_PER_RUN = 400;   // keeps each run well inside the time limit; leftovers are looked up next run
 
 // Add to this as you confirm more sponsor page patterns.
 const SPONSOR_URLS = {
@@ -119,25 +119,65 @@ function toISO(d) {
   return m ? `${m[3]}-${m[1].padStart(2, "0")}-${m[2].padStart(2, "0")}` : null;
 }
 
-// Things that can't be live-priced as a stock: swaps, bonds/notes, cash, futures, options, loans, FX.
-const NON_EQUITY = /\birs\b|\bswaps?\b|sofr|libor|\bccp|\bcash\b|money market|\brepo\b|repurchase|\btreasur(y|ies)\b|\bnotes?\b|\bbonds?\b|\bdebentures?\b|\bloans?\b|\bfutures?\b|\boptions?\b|\bforwards?\b|\bfx\b|\bcurrency\b|\d+(\.\d+)?\s?%|\b(19|20)\d\d\b|\bdue\b/i;
+// Things that can't be live-priced as a stock: swaps, bonds/notes, cash, futures, options, loans, FX,
+// private placements, convertibles ("Uber Technolo 0.875 12/28"), and accounting lines.
+const NON_EQUITY = /\birs\b|\bswaps?\b|sofr|libor|\bccp|\bcash\b|money market|\brepo\b|repurchase|\btreasur(y|ies)\b|\bnotes?\b|\bbonds?\b|\bdebentures?\b|\bloans?\b|\bfutures?\b|\boptions?\b|\bforwards?\b|\bfx\b|\bcurrency\b|\d+(\.\d+)?\s?%|\b(19|20)\d\d\b|\bdue\b|\bprvt\b|private|\bpref eq\b|\bseries [a-z]-?\d*\b|\d+\.\d+\s+\d{1,2}\/\d{2}\b|\b\d{1,2}\/\d{2}\b|convertible|\bprf\b|perpetual|other (liability|assets)|clearing corp|merger sub|bidco/i;
 const US_EXCHANGES = new Set(["NMS", "NYQ", "NGM", "NCM", "ASE", "PCX", "BTS", "NAS", "NYS", "CBO"]);
+const LOOKUP_VERSION = 2;   // bump to re-try earlier misses / foreign picks with an improved method
+
+// Abbreviated sector-SPDR names as they appear in CEFConnect tables
+const ETF_ALIASES = [
+  [/engy.*sel.*sect|energy select sector/i, "XLE"], [/util.*sel.*sect|utilities select sector/i, "XLU"],
+  [/fin.*sel.*sect|financial select sector/i, "XLF"], [/tech.*sel.*sect|technology select sector/i, "XLK"],
+  [/(hlth|health).*sel.*sect/i, "XLV"], [/(indl|industrial).*sel.*sect/i, "XLI"], [/(matls|materials).*sel.*sect/i, "XLB"],
+  [/(cons|consumer).*(stap|staples).*sel/i, "XLP"], [/(cons|consumer).*(disc|discretionary).*sel/i, "XLY"],
+  [/real.*estate.*sel.*sect/i, "XLRE"], [/comm.*(svcs|services).*sel/i, "XLC"]
+];
+
+// "Meta Platforms Inc Class A" → "Meta Platforms Inc"; "Sanofi SA ADR" → "Sanofi SA"
+function cleanName(name) {
+  return name.replace(/®|™/g, " ")
+    .replace(/\(.*?\)/g, " ")
+    .replace(/\b(class|cl)\s+[a-z]\b/gi, " ")
+    .replace(/\bordinary shares?\b|\bord shs?\b|\bregistered shares?\b|\breg shs?\b|\bshs\b|\bpartnership units?\b|\bunits?\b|\bcommon stock\b|\bnon[- ]?vtg\b|\bnon[- ]?voting\b|\bsponsored\b|\bunsponsored\b|\badrs?\b|\bads\b|\bgdrs?\b|\bnew\b|\bact\.?\b|\bregistered\b/gi, " ")
+    .replace(/(^|\s)-[a-z]-(?=\s|$)/gi, " ")
+    .replace(/[-–]\s*$/, "").replace(/\s+/g, " ").trim();
+}
+const LEGAL = /\b(inc|corp|corporation|co|company|ltd|limited|plc|sa|ag|nv|se|spa|s\.a\.|n\.v\.|holdings?|group|lp|llc|oyj|asa|ab|kk)\b\.?/gi;
+
+async function yahooSearch(q) {
+  const url = `${YAHOO_SEARCH}?q=${encodeURIComponent(q)}&quotesCount=10&newsCount=0&listsCount=0`;
+  const j = JSON.parse(await fetchText(url, 8000, "application/json"));
+  return (j.quotes || []).filter(x => x.symbol && (x.quoteType === "EQUITY" || x.quoteType === "ETF"));
+}
 
 async function yahooLookup(name) {
-  const url = `${YAHOO_SEARCH}?q=${encodeURIComponent(name)}&quotesCount=6&newsCount=0&listsCount=0`;
-  const j = JSON.parse(await fetchText(url, 8000, "application/json"));
-  const quotes = (j.quotes || []).filter(q => q.symbol && (q.quoteType === "EQUITY" || q.quoteType === "ETF"));
-  const us = quotes.find(q => US_EXCHANGES.has(q.exchange));
-  const pick = us || quotes[0];
-  if (!pick) return { t: null, at: new Date().toISOString() };
-  return { t: pick.symbol, ex: pick.exchange || null, foreign: !us, yname: pick.shortname || pick.longname || null, at: new Date().toISOString() };
+  const at = new Date().toISOString();
+  for (const [re, t] of ETF_ALIASES) if (re.test(name)) return { t, ex: "PCX", foreign: false, v: LOOKUP_VERSION, at };
+  const base = cleanName(name);
+  const noLegal = base.replace(LEGAL, " ").replace(/\s+/g, " ").trim();
+  const firstTwo = noLegal.split(" ").slice(0, 2).join(" ");
+  const tries = [...new Set([base, noLegal, firstTwo].filter(q => q && q.length >= 3))];
+  let firstHit = null;
+  for (const q of tries) {
+    const quotes = await yahooSearch(q);
+    const us = quotes.find(x => US_EXCHANGES.has(x.exchange));
+    if (us) return { t: us.symbol, ex: us.exchange, foreign: false, yname: us.shortname || us.longname || null, query: q, v: LOOKUP_VERSION, at };
+    if (!firstHit && quotes[0]) firstHit = { q, x: quotes[0] };
+  }
+  if (firstHit) return { t: firstHit.x.symbol, ex: firstHit.x.exchange || null, foreign: true, yname: firstHit.x.shortname || null, query: firstHit.q, v: LOOKUP_VERSION, at };
+  return { t: null, v: LOOKUP_VERSION, at };
 }
 
 // Resolves names → tickers, using and updating the shared KV cache.
 async function resolveNames(names) {
   const cache = (await kv.get("holding-tickers")) || {};
-  const stale = n => cache[n] && !cache[n].t && (Date.now() - Date.parse(cache[n].at || 0)) > 14 * 86400000; // retry misses after 14 days
-  const todo = [...new Set(names)].filter(n => (!(n in cache) || stale(n)) && !NON_EQUITY.test(n)).slice(0, MAX_NEW_LOOKUPS_PER_RUN);
+  const redo = n => {
+    const c = cache[n]; if (!c) return true;
+    if (c.v !== LOOKUP_VERSION && (!c.t || c.foreign)) return true;                    // retry with the improved method once
+    return !c.t && (Date.now() - Date.parse(c.at || 0)) > 14 * 86400000;              // retry misses after 14 days
+  };
+  const todo = [...new Set(names)].filter(n => !NON_EQUITY.test(n) && redo(n)).slice(0, MAX_NEW_LOOKUPS_PER_RUN);
   let i = 0;
   async function worker() {
     while (i < todo.length) {
