@@ -17,6 +17,10 @@
 // its OWN copy of the watchlist, separate from nav-check.js's — they must be
 // kept in sync manually. If you add more funds later, update BOTH files.
 //
+// HOLDINGS MODE (2026-10-01): /api/nav-data?holdings=1 returns holdings-check.js's
+// saved top-10 holdings for every fund (kept in this file so the project stays
+// within Vercel's 12-function limit).
+//
 // WHERE TO PUT IT: api/nav-data.js at the root of your cef-cron-jobs repo.
 
 import { kv } from "@vercel/kv";
@@ -65,6 +69,13 @@ export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Methods", "GET");
   res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
   try {
+    // ?holdings=1 → the saved top-10 holdings (from holdings-check.js) for every fund
+    if (req.query?.holdings) {
+      const hv = await kv.mget(...WATCHLIST.map(t => `holdings:${t}`));
+      const holdings = {};
+      WATCHLIST.forEach((ticker, i) => { if (hv[i]) holdings[ticker] = hv[i]; });
+      return res.status(200).json({ ok: true, count: Object.keys(holdings).length, holdings });
+    }
     const keys = WATCHLIST.map(t => `nav-current:${t}`);
     const values = await kv.mget(...keys);
     const nav = {};
