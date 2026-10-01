@@ -32,6 +32,13 @@
 // fetched value exactly matches what was already saved from a PRIOR day,
 // wait a few seconds and try that one fund again before trusting it.
 //
+// REAL NAV DATES (2026-10-01): navAsOf used to be "the day this job ran"
+// (UTC), so every fund looked like it had today's NAV even when CEFConnect
+// still had yesterday's. Now NAV, price, discount AND the NAV date come from
+// CEFConnect's own daily-pricing feed (one request returns every fund), the
+// history is saved under the REAL NAV date, and a NAV is never replaced by
+// an older one. checkedAt records when the job ran.
+//
 // STORAGE: uses Vercel KV — npm install @vercel/kv
 
 import { kv } from "@vercel/kv";
@@ -124,6 +131,51 @@ async function fetchMarketPrice52wRange(ticker) {
   }
 }
 
+// ---- CEFConnect daily-pricing feed: every fund's NAV, price, discount and NAV date in ONE request ----
+const CEFCONNECT_DAILY = "https://www.cefconnect.com/api/v3/DailyPricing?props=Ticker,NAV,LastUpdated,Price,Discount";
+let bulkPromise = null;
+function getBulkPricing() {
+  if (!bulkPromise) {
+    bulkPromise = (async () => {
+      try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 20000);
+        const res = await fetch(CEFCONNECT_DAILY, {
+          headers: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+            "Accept": "application/json, text/plain, */*",
+            "Referer": "https://www.cefconnect.com/"
+          },
+          signal: controller.signal
+        });
+        clearTimeout(timer);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const rows = await res.json();
+        const map = {};
+        for (const r of rows || []) {
+          if (!r || !r.Ticker || typeof r.NAV !== "number") continue;
+          map[String(r.Ticker).toUpperCase()] = {
+            nav: +r.NAV.toFixed(4),
+            sharePrice: typeof r.Price === "number" ? +r.Price.toFixed(4) : null,
+            premDisc: typeof r.Discount === "number" ? r.Discount : null,
+            date: typeof r.LastUpdated === "string" ? r.LastUpdated.slice(0, 10) : null
+          };
+        }
+        return map;
+      } catch (e) {
+        console.error("[nav-check] CEFConnect daily-pricing feed failed:", e.message);
+        return {};
+      }
+    })();
+  }
+  return bulkPromise;
+}
+// "As of 9/30/2026" on a CEFConnect fund page → "2026-09-30"
+function parseAsOfDate(html) {
+  const m = html.match(/As of\s*(\d{1,2})\/(\d{1,2})\/(\d{4})/i);
+  return m ? `${m[3]}-${m[1].padStart(2, "0")}-${m[2].padStart(2, "0")}` : null;
+}
+
 async function getNavHistory(ticker) {
   const raw = await kv.get(`nav-history:${ticker}`);
   return raw || [];
@@ -205,78 +257,68 @@ function getGroup(groupNum) {
   return WATCHLIST.filter((_, i) => i % 4 === idx);
 }
 
-async function fetchNavOnce(ticker) {
-  let nav = null, source = null, sharePrice = null, premDisc = null;
-
-  try {
-    const url = `${CEFDATA_BASE}${ticker.toLowerCase()}`;
-    const html = await fetchText(url);
-    const overview = parseCefDataOverview(html);
-    if (overview) {
-      nav = overview.nav;
-      sharePrice = overview.sharePrice;
-      premDisc = overview.premiumDiscountPct;
-      source = "cefdata";
-    }
-  } catch { /* fall through to CEFConnect */ }
-
+async function fetchNavOnce(ticker, needAssetClass) {
+  let nav = null, source = null, sharePrice = null, premDisc = null, date = null;
   let categoryRaw = null, assetClass = null;
 
-  if (!nav) {
+  // 1) CEFConnect daily-pricing feed (fast, includes the real NAV date)
+  const bulk = (await getBulkPricing())[ticker];
+  if (bulk && bulk.nav) {
+    ({ nav, sharePrice, premDisc, date } = bulk);
+    source = "cefconnect";
+  }
+
+  // 2) CEFConnect fund page — fallback for NAV, and the only place with the Category field
+  if (!nav || needAssetClass) {
     try {
       const html = await fetchText(`${CEFCONNECT_BASE}${ticker}`);
-      const overview = parseCefConnectOverview(html);
-      if (overview) {
-        nav = overview.nav;
-        sharePrice = overview.sharePrice;
-        premDisc = overview.premiumDiscountPct;
-        source = "cefconnect";
+      if (!nav) {
+        const overview = parseCefConnectOverview(html);
+        if (overview) {
+          nav = overview.nav; sharePrice = overview.sharePrice; premDisc = overview.premiumDiscountPct;
+          date = parseAsOfDate(html); source = "cefconnect-page";
+        }
       }
       const ac = parseAssetClass(html);
-      categoryRaw = ac.categoryRaw;
-      assetClass = ac.assetClass;
-    } catch {
-      return null;
-    }
-  } else {
-    // CEFdata succeeded for NAV, but asset-class only comes from CEFConnect's
-    // Category field — fetch it separately (cheap, doesn't need to succeed).
+      categoryRaw = ac.categoryRaw; assetClass = ac.assetClass;
+    } catch { /* not fatal */ }
+  }
+
+  // 3) CEFdata as a last resort (its data also carries a date)
+  if (!nav) {
     try {
-      const html = await fetchText(`${CEFCONNECT_BASE}${ticker}`);
-      const ac = parseAssetClass(html);
-      categoryRaw = ac.categoryRaw;
-      assetClass = ac.assetClass;
-    } catch { /* asset class stays null, not fatal */ }
+      const html = await fetchText(`${CEFDATA_BASE}${ticker.toLowerCase()}`);
+      const overview = parseCefDataOverview(html);
+      if (overview) {
+        nav = overview.nav; sharePrice = overview.sharePrice; premDisc = overview.premiumDiscountPct;
+        date = overview.date; source = "cefdata";
+      }
+    } catch { /* nothing else to try */ }
   }
 
   if (!nav) return null;
-  return { nav, sharePrice, premDisc, source, categoryRaw, assetClass };
+  return { nav, sharePrice, premDisc, source, date, categoryRaw, assetClass };
 }
 
 async function checkOneNav(ticker) {
   const previous = await kv.get(`nav-current:${ticker}`);
-  const today = new Date().toISOString().slice(0, 10);
+  const checkedAt = new Date().toISOString();
 
-  let result = await fetchNavOnce(ticker);
-  if (!result) return { ticker, ok: false, error: "no NAV found on either source" };
-
-  const looksStale = previous
-    && previous.navAsOf !== today
-    && previous.nav === result.nav
-    && previous.sharePrice === result.sharePrice;
-
-  if (looksStale) {
-    await new Promise(r => setTimeout(r, 4000));
-    const retryResult = await fetchNavOnce(ticker);
-    if (retryResult && (retryResult.nav !== result.nav || retryResult.sharePrice !== result.sharePrice)) {
-      result = retryResult;
-    }
-  }
+  const result = await fetchNavOnce(ticker, !previous?.assetClass);
+  if (!result) return { ticker, ok: false, error: "no NAV found on any source" };
 
   const { nav, sharePrice, premDisc, source, categoryRaw, assetClass } = result;
+  // The NAV's own date. If a source gave none, keep the previous date when the NAV is unchanged.
+  let navAsOf = result.date || (previous?.checkedAt && previous.nav === nav ? previous.navAsOf : null) || checkedAt.slice(0, 10);
 
-  await appendNavHistory(ticker, today, nav, source);
+  // Never replace a newer NAV with an older one (e.g. a source that hasn't updated yet).
+  // (Only trusts dates written by this version — older rows were labelled with the run date.)
+  if (previous?.checkedAt && previous?.navAsOf && navAsOf < previous.navAsOf) {
+    await kv.set(`nav-current:${ticker}`, { ...previous, checkedAt });
+    return { ticker, ok: true, kept: "previous (source had an older NAV)", ...previous, checkedAt };
+  }
 
+  await appendNavHistory(ticker, navAsOf, nav, source);
   const history = await getNavHistory(ticker);
   const navRange = compute52wNavRange(history);
   const priceRange = await fetchMarketPrice52wRange(ticker);
@@ -286,7 +328,8 @@ async function checkOneNav(ticker) {
     nav,
     sharePrice,
     premiumDiscountPct: premDisc,
-    navAsOf: today,
+    navAsOf,
+    checkedAt,
     source,
     navHigh52w_partial: navRange.high,
     navLow52w_partial: navRange.low,
@@ -314,5 +357,9 @@ async function runNavCheck(groupTickers) {
 export default async function handler(req, res) {
   const groupTickers = getGroup(req.query.group);
   const results = await runNavCheck(groupTickers);
-  res.status(200).json({ ok: true, group: req.query.group || "all", checked: results.length, results });
+  const bulkCount = Object.keys(await getBulkPricing()).length;
+  const failed = results.filter(r => !r.ok).length;
+  const dates = {};
+  results.forEach(r => { if (r.navAsOf) dates[r.navAsOf] = (dates[r.navAsOf] || 0) + 1; });
+  res.status(200).json({ ok: true, group: req.query.group || "all", checked: results.length, failed, cefconnectFeedFunds: bulkCount, navDates: dates, results });
 }
