@@ -1,0 +1,19 @@
+name: Holdings Check
+
+on:
+  schedule:
+    - cron: "45 12 * * 1-5"
+  workflow_dispatch: {}
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Group 1
+        run: curl -sS --max-time 200 "https://cef-cron-jobs.vercel.app/api/holdings-check?group=1"
+      - name: Group 2
+        run: curl -sS --max-time 200 "https://cef-cron-jobs.vercel.app/api/holdings-check?group=2"
+      - name: Group 3
+        run: curl -sS --max-time 200 "https://cef-cron-jobs.vercel.app/api/holdings-check?group=3"
+      - name: Group 4
+        run: curl -sS --max-time 200 "https://cef-cron-jobs.vercel.app/api/holdings-check?group=4"
