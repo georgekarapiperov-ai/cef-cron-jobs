@@ -2,6 +2,10 @@
 //
 // WHAT THIS DOES: reads all 7 sources' separately-saved data and merges it
 // into one combined per-ticker view for the frontend tool.
+//
+// BANDWIDTH (2026-10-02): the answer is cached at Vercel's edge for 30 minutes,
+// so repeated app refreshes are served from the cache instead of reading all
+// 7 news files from KV every time (that was a big part of the KV bandwidth).
 
 import { kv } from "@vercel/kv";
 
@@ -10,7 +14,7 @@ const SOURCES = ["newsfilter", "yahoo", "google", "stocktwits", "finviz", "alpha
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET");
-  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+  res.setHeader("Cache-Control", "public, s-maxage=1800, stale-while-revalidate=3600");
 
   try {
     const sourceData = await Promise.all(SOURCES.map(s => kv.get(`news:source:${s}`)));
@@ -37,7 +41,7 @@ export default async function handler(req, res) {
       }
       const sorted = deduped
         .sort((a, b) => (b.pubDate || "").localeCompare(a.pubDate || ""))
-        .slice(0, 20);
+        .slice(0, 12);
       news[ticker] = {
         items: sorted,
         hasRecentNews: sorted.some(i => i.pubDate && (Date.now() - new Date(i.pubDate).getTime()) < 24 * 60 * 60 * 1000)
