@@ -1,7 +1,7 @@
 name: News - SEC EDGAR
 on:
   schedule:
-    - cron: "30 * * * *"
+    - cron: "12 11,15,19,23 * * 1-5"
   workflow_dispatch: {}
 jobs:
   ping:
