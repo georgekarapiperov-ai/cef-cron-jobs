@@ -13,6 +13,10 @@
 //   FRED (Pref Setup tab):       /api/quote?fred=DGS20,BAMLC0A4CBBB   (max 5 series, official Federal Reserve data)
 //     → { ok, fred: { ID: { d: [dates], v: [values], src } }, errors }
 //     Optional: set FRED_API_KEY in Vercel → Settings → Environment Variables for the most reliable route.
+//   CALENDARS (Pref Setup → Calendars) — fetched live and cached at Vercel's edge, NO KV used:
+//     /api/quote?econ=1&from=2026-10-05&to=2026-10-11&countries=US,EU,DE   (TradingView economic calendar, max 35 days)
+//     /api/quote?earnings=2026-10-01&to=2026-10-31   (Nasdaq earnings calendar, weekdays, max 35 days)
+//     /api/quote?dividends=2026-10-01&to=2026-10-31  (Nasdaq dividend calendar by ex-date, weekdays, max 35 days)
 
 const MAX_BATCH = 30;
 const MAX_HISTORY = 25;
@@ -104,6 +108,60 @@ async function getFred(id) {
   throw new Error(errs.join(" | "));
 }
 
+
+// ---------- CALENDARS (live, edge-cached, no KV) ----------
+const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
+function dayList(from, to, weekdaysOnly) {
+  const out = []; const d = new Date(from + "T00:00:00Z"), end = new Date(to + "T00:00:00Z");
+  while (d <= end && out.length < 36) { const wd = d.getUTCDay(); if (!weekdaysOnly || (wd !== 0 && wd !== 6)) out.push(d.toISOString().slice(0, 10)); d.setUTCDate(d.getUTCDate() + 1); }
+  return out;
+}
+async function poolMap(items, n, fn) {
+  const out = new Array(items.length); let i = 0;
+  await Promise.all(Array.from({ length: Math.min(n, items.length) }, async () => { while (i < items.length) { const k = i++; try { out[k] = await fn(items[k]); } catch (e) { out[k] = { error: e.message }; } } }));
+  return out;
+}
+async function fetchJSON(url, headers, timeoutMs = 10000) {
+  const controller = new AbortController(); const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const r = await fetch(url, { headers, signal: controller.signal });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return await r.json();
+  } finally { clearTimeout(timer); }
+}
+const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36";
+const NASDAQ_HEADERS = { "User-Agent": UA, "Accept": "application/json, text/plain, */*", "Accept-Language": "en-US,en;q=0.9", "Origin": "https://www.nasdaq.com", "Referer": "https://www.nasdaq.com/" };
+const money = s => { const n = parseFloat(String(s ?? "").replace(/[$,\s]/g, "")); return isNaN(n) ? null : n; };
+const mdy = s => { const m = String(s || "").match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/); return m ? `${m[3]}-${m[1].padStart(2, "0")}-${m[2].padStart(2, "0")}` : null; };
+
+async function econCalendar(from, to, countries) {
+  const url = `https://economic-calendar.tradingview.com/events?from=${from}T00:00:00.000Z&to=${to}T23:59:59.000Z&countries=${encodeURIComponent(countries)}`;
+  let j;
+  for (const origin of ["https://www.tradingview.com", "https://in.tradingview.com"]) {
+    try { j = await fetchJSON(url, { "User-Agent": UA, "Accept": "application/json", "Origin": origin, "Referer": origin + "/" }); break; }
+    catch (e) { if (origin.includes("in.")) throw e; }
+  }
+  return (j?.result || []).map(e => ({
+    t: e.date, country: e.country, title: e.title, period: e.period || null, importance: e.importance,
+    actual: e.actual ?? null, forecast: e.forecast ?? null, previous: e.previous ?? null, unit: e.unit || "", scale: e.scale || "", category: e.category || null
+  }));
+}
+async function earningsDay(date) {
+  const j = await fetchJSON(`https://api.nasdaq.com/api/calendar/earnings?date=${date}`, NASDAQ_HEADERS);
+  return (j?.data?.rows || []).map(r => ({
+    date, symbol: r.symbol, name: r.name, mcap: money(r.marketCap),
+    time: /pre/i.test(r.time || "") ? "bmo" : /after/i.test(r.time || "") ? "amc" : "",
+    eps: money(r.epsForecast), nEst: parseInt(r.noOfEsts, 10) || null, fq: r.fiscalQuarterEnding || null, lastEps: money(r.lastYearEPS)
+  }));
+}
+async function dividendsDay(date) {
+  const j = await fetchJSON(`https://api.nasdaq.com/api/calendar/dividends?date=${date}`, NASDAQ_HEADERS);
+  return (j?.data?.calendar?.rows || []).map(r => ({
+    exDate: mdy(r.dividend_Ex_Date) || date, symbol: r.symbol, name: r.companyName, amount: money(r.dividend_Rate),
+    annual: money(r.indicated_Annual_Dividend), payDate: mdy(r.payment_Date), recordDate: mdy(r.record_Date), announced: mdy(r.announcement_Date)
+  }));
+}
+
 async function fetchText(url, timeoutMs = 8000) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -156,6 +214,32 @@ export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET");
   const params = new URL(req.url, "http://x").searchParams;
+
+  // ---- Calendars ----
+  const q = k => req.query?.[k] || params.get(k);
+  if (q("econ") || q("earnings") || q("dividends")) {
+    const from = q("econ") ? q("from") : (q("earnings") || q("dividends"));
+    const to = q("to") || from;
+    if (!ISO_DAY.test(from || "") || !ISO_DAY.test(to || "") || to < from) return res.status(400).json({ ok: false, error: "use from/to as YYYY-MM-DD" });
+    try {
+      if (q("econ")) {
+        const countries = String(q("countries") || "US,EU,DE,FR,GB,JP,CN,IN,AU,NZ").toUpperCase().replace(/[^A-Z,]/g, "");
+        const days = dayList(from, to, false);
+        const events = await econCalendar(from, days[days.length - 1], countries);
+        res.setHeader("Cache-Control", "s-maxage=1800, stale-while-revalidate=3600");
+        return res.status(200).json({ ok: true, from, to, count: events.length, events });
+      }
+      const days = dayList(from, to, true);
+      const isEarn = !!q("earnings");
+      const per = await poolMap(days, 6, isEarn ? earningsDay : dividendsDay);
+      const rows = [], errors = {};
+      per.forEach((r, i) => { if (Array.isArray(r)) rows.push(...r); else errors[days[i]] = r?.error || "failed"; });
+      res.setHeader("Cache-Control", "s-maxage=21600, stale-while-revalidate=43200");
+      return res.status(200).json({ ok: true, from, to, count: rows.length, rows, errors });
+    } catch (e) {
+      return res.status(502).json({ ok: false, error: e.message });
+    }
+  }
 
   // ---- History mode: ?history=A,B&range=6mo ----
   const hist = req.query?.history || params.get("history");
