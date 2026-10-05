@@ -29,7 +29,7 @@ const RANGES = new Set(["1mo", "3mo", "6mo", "1y", "2y"]);
 
 // Daily history for one ticker: closes, dividend-adjusted closes, volumes, dividends.
 async function getHistory(symbol, range) {
-  const yahooSymbol = symbol.replace(/\./g, "-");
+  const yahooSymbol = /^[A-Z]+\.[ABC]$/.test(symbol) ? symbol.replace(".", "-") : symbol;   // BRK.B → BRK-B; keep exchange suffixes (005930.KS, IBE.MC)
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooSymbol)}?range=${range}&interval=1d&events=div`;
   const data = JSON.parse(await fetchText(url, 8000));
   const r = data?.chart?.result?.[0];
@@ -309,7 +309,7 @@ async function fetchText(url, timeoutMs = 8000) {
 async function getQuote(symbol, timeoutMs) {
   // Yahoo uses hyphens for share classes (BRK-A) where our data uses periods (BRK.A).
   // Keep the ORIGINAL symbol in the response so the frontend's lookup still matches.
-  const yahooSymbol = symbol.replace(/\./g, "-");
+  const yahooSymbol = /^[A-Z]+\.[ABC]$/.test(symbol) ? symbol.replace(".", "-") : symbol;   // BRK.B → BRK-B; keep exchange suffixes (005930.KS, IBE.MC)
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooSymbol)}?range=1d&interval=1m&includePrePost=true`;
   const raw = await fetchText(url, timeoutMs);
   const data = JSON.parse(raw);
