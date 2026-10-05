@@ -21,6 +21,11 @@
 // saved top-10 holdings for every fund (kept in this file so the project stays
 // within Vercel's 12-function limit).
 //
+// LIVE FALLBACK (2026-10-05): if KV fails (e.g. the Upstash free-plan limit) or
+// returns nothing, NAVs are read straight from CEFConnect's daily-pricing feed
+// (one request, every fund's NAV, price, discount and real NAV date). The app
+// keeps working without the database; that answer is cached 15 min at the edge.
+//
 // WHERE TO PUT IT: api/nav-data.js at the root of your cef-cron-jobs repo.
 
 import { kv } from "@vercel/kv";
@@ -64,6 +69,37 @@ const WATCHLIST = [
   "RMI", "CAF", "NCA", "NIM", "RFM", "MXE", "IHD"
 ];
 
+async function liveFromCefConnect() {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 15000);
+  try {
+    const r = await fetch("https://www.cefconnect.com/api/v3/DailyPricing?props=Ticker,NAV,LastUpdated,Price,Discount", {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+        "Accept": "application/json, text/plain, */*",
+        "Referer": "https://www.cefconnect.com/"
+      },
+      signal: controller.signal
+    });
+    if (!r.ok) throw new Error(`CEFConnect HTTP ${r.status}`);
+    const rows = await r.json();
+    const byTicker = {};
+    (rows || []).forEach(x => { if (x && x.Ticker && typeof x.NAV === "number") byTicker[String(x.Ticker).toUpperCase()] = x; });
+    const nav = {}, checkedAt = new Date().toISOString();
+    WATCHLIST.forEach(t => {
+      const x = byTicker[t]; if (!x) return;
+      nav[t] = {
+        ticker: t, nav: +x.NAV.toFixed(4),
+        sharePrice: typeof x.Price === "number" ? +x.Price.toFixed(4) : null,
+        premiumDiscountPct: typeof x.Discount === "number" ? x.Discount : null,
+        navAsOf: typeof x.LastUpdated === "string" ? x.LastUpdated.slice(0, 10) : null,
+        checkedAt, source: "cefconnect-live"
+      };
+    });
+    return nav;
+  } finally { clearTimeout(timer); }
+}
+
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET");
@@ -76,12 +112,18 @@ export default async function handler(req, res) {
       WATCHLIST.forEach((ticker, i) => { if (hv[i]) holdings[ticker] = hv[i]; });
       return res.status(200).json({ ok: true, count: Object.keys(holdings).length, holdings });
     }
-    const keys = WATCHLIST.map(t => `nav-current:${t}`);
-    const values = await kv.mget(...keys);
-    const nav = {};
-    WATCHLIST.forEach((ticker, i) => {
-      if (values[i]) nav[ticker] = values[i];
-    });
+    let nav = {}, kvError = null;
+    try {
+      const keys = WATCHLIST.map(t => `nav-current:${t}`);
+      const values = await kv.mget(...keys);
+      WATCHLIST.forEach((ticker, i) => { if (values[i]) nav[ticker] = values[i]; });
+    } catch (e) { kvError = e.message; }
+    if (!Object.keys(nav).length) {
+      // KV unavailable or empty → live NAVs from CEFConnect
+      nav = await liveFromCefConnect();
+      res.setHeader("Cache-Control", "s-maxage=900, stale-while-revalidate=1800");
+      return res.status(200).json({ ok: true, count: Object.keys(nav).length, source: "cefconnect-live", kvError: kvError ? kvError.slice(0, 160) : null, nav });
+    }
     res.status(200).json({ ok: true, count: Object.keys(nav).length, nav });
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message });
