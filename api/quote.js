@@ -197,7 +197,10 @@ function qolParse(html) {
     const hi = rows.findIndex(r => r.some(c => c.join(" ").includes("Cpn Rate")));
     if (hi >= 0 && rows[hi + 1]) {
       const hdr = rows[hi].map(c => c.join(" ")), val = rows[hi + 1];
-      const get = l => { const i = hdr.findIndex(h => h.includes(l)); return i >= 0 ? (val[i] || []) : []; };
+      // header and value rows don't always have the same number of cells: find the offset where the coupon cell looks right
+      const ci = hdr.findIndex(h => h.includes("Cpn Rate"));
+      const off = [0, -1, 1, -2, 2].find(o => /%|fixfloat|reset|variable|n\.a\./i.test((val[ci + o] || [])[0] || "")) ?? (val.length - hdr.length);
+      const get = l => { const i = hdr.findIndex(h => h.includes(l)); return i >= 0 ? (val[i + off] || []) : []; };
       const cr = get("Cpn Rate"), lp = get("LiqPref"), cd = get("Call Date"), rt = get("Moodys"), dd = get("Distribution");
       out.cpnRate = cr[0] || null; out.annAmt = cr[1] || null; out.liqPref = lp[0] || null; out.callPrice = lp[1] || null;
       out.callDate = cd[0] || null; out.maturity = cd[1] || null;
