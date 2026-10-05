@@ -191,7 +191,11 @@ function qolParse(html) {
   const st = text.match(/Security Type:\s*([^\n]+)/); out.secType = st ? st[1].trim() : null;
   const nm = text.match(/([^\n]{5,200})\s*\n?\s*Ticker Symbol:/); out.name = nm ? nm[1].replace(/.*\)\s*;\s*/, "").replace(/^.*?\bLOGIN\b\s*/i, "").trim() : null;
   // the data table: header row with "Cpn Rate", then the values row
-  const tbl = [...html.matchAll(/<table[\s\S]*?<\/table>/gi)].map(x => x[0]).find(t => /Cpn Rate/.test(t) && !/<table[\s\S]*<table/i.test(t.slice(6)));
+  // the innermost table around "Cpn Rate" (QuantumOnline nests it inside a layout table)
+  const cpnAt = html.search(/Cpn Rate/);
+  const tStart = cpnAt > 0 ? html.toLowerCase().lastIndexOf("<table", cpnAt) : -1;
+  const tEnd = cpnAt > 0 ? html.toLowerCase().indexOf("</table>", cpnAt) : -1;
+  const tbl = tStart >= 0 && tEnd > tStart ? html.slice(tStart, tEnd + 8) : null;
   if (tbl) {
     const rows = [...tbl.matchAll(/<tr[\s\S]*?<\/tr>/gi)].map(r => [...r[0].matchAll(/<t[dh][^>]*>([\s\S]*?)<\/t[dh]>/gi)].map(c => htmlText(c[1]).split("\n").map(x => x.trim()).filter(Boolean)));
     const hi = rows.findIndex(r => r.some(c => c.join(" ").includes("Cpn Rate")));
