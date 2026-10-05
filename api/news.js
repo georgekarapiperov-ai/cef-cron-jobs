@@ -8,30 +8,40 @@
 // 7 news files from KV every time (that was a big part of the KV bandwidth).
 
 // LIVE FALLBACK (2026-10-05): if KV fails (Upstash plan limit) or has no news,
-// headlines are fetched live from Yahoo Finance RSS for every CEF (same source
-// and relevance filter as the news-yahoo job), so the app keeps getting news.
+// headlines are fetched live from Yahoo Finance RSS and Google News RSS for every
+// CEF (same feeds, queries and relevance filter as the news jobs), so the app keeps
+// getting news.
 // That answer is cached 30 min at the edge too.
 
 import { kv } from "@vercel/kv";
 import { CEF_WATCHLIST, fetchText, parseRssItems, isRelevant } from "../lib/news-shared.js";
 
 const LIVE_MAX_AGE_DAYS = 21;
-async function liveYahooNews(tickers, budgetMs = 40000) {
+// Live headlines for one fund from Yahoo Finance RSS and Google News RSS (same feeds and
+// queries as the news-yahoo / news-google jobs), filtered by the shared relevance rules.
+async function liveForTicker(t, cutoff) {
+  const feeds = [
+    [`https://feeds.finance.yahoo.com/rss/2.0/headline?s=${encodeURIComponent(t)}&region=US&lang=en-US`, "Yahoo Finance"],
+    [`https://news.google.com/rss/search?q=${encodeURIComponent(t + " stock")}&hl=en-US&gl=US&ceid=US:en`, "Google News"]
+  ];
+  const got = await Promise.all(feeds.map(async ([url, src]) => {
+    try { return parseRssItems(await fetchText(url, 6000)).map(x => ({ ...x, source: x.source || src })); }
+    catch { return []; }
+  }));
+  return got.flat().filter(x => isRelevant(x, t) && (!x.pubDate || Date.parse(x.pubDate) >= cutoff));
+}
+async function liveNews(tickers, budgetMs = 45000) {
   const t0 = Date.now(), cutoff = Date.now() - LIVE_MAX_AGE_DAYS * 86400000;
   const out = {}; let i = 0, fetched = 0;
   async function worker() {
     while (i < tickers.length && Date.now() - t0 < budgetMs) {
       const t = tickers[i++];
-      try {
-        const xml = await fetchText(`https://feeds.finance.yahoo.com/rss/2.0/headline?s=${encodeURIComponent(t)}&region=US&lang=en-US`, 6000);
-        const items = parseRssItems(xml).map(x => ({ ...x, source: x.source || "Yahoo Finance" }))
-          .filter(x => isRelevant(x, t) && (!x.pubDate || Date.parse(x.pubDate) >= cutoff));
-        if (items.length) out[t] = items;
-        fetched++;
-      } catch { /* skip this ticker */ }
+      const items = await liveForTicker(t, cutoff);
+      if (items.length) out[t] = items;
+      fetched++;
     }
   }
-  await Promise.all(Array.from({ length: 25 }, worker));
+  await Promise.all(Array.from({ length: 20 }, worker));
   return { out, fetched };
 }
 function shape(combined) {
@@ -72,9 +82,9 @@ export default async function handler(req, res) {
   }
   // KV down or empty → live Yahoo headlines
   try {
-    const { out, fetched } = await liveYahooNews(CEF_WATCHLIST);
+    const { out, fetched } = await liveNews(CEF_WATCHLIST);
     const news = shape(out);
-    return res.status(200).json({ ok: true, count: Object.keys(news).length, source: "live-yahoo", fetched, kvError: kvError ? kvError.slice(0, 160) : null, news });
+    return res.status(200).json({ ok: true, count: Object.keys(news).length, source: "live-yahoo+google", fetched, kvError: kvError ? kvError.slice(0, 160) : null, news });
   } catch (err) {
     res.setHeader("Cache-Control", "no-store");
     return res.status(500).json({ ok: false, error: err.message, kvError });
