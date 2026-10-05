@@ -201,12 +201,17 @@ function qolParse(html) {
     const hi = rows.findIndex(r => r.some(c => c.join(" ").includes("Cpn Rate")));
     if (hi >= 0 && rows[hi + 1]) {
       const hdr = rows[hi].map(c => c.join(" ")), val = rows[hi + 1];
-      // header and value rows don't always have the same number of cells: find the offset where the coupon cell looks right
-      const ci = hdr.findIndex(h => h.includes("Cpn Rate"));
-      const off = [0, -1, 1, -2, 2].find(o => /%|fixfloat|reset|variable|n\.a\./i.test((val[ci + o] || [])[0] || "")) ?? (val.length - hdr.length);
+      // QuantumOnline's raw HTML misses a </td>, so "NYSE Chart" and the coupon can share the first value cell
+      // (6 value cells under 7 headers). Align the other columns by the cell-count difference, and find the
+      // coupon line itself in the first two value cells.
+      const off = Math.min(0, val.length - hdr.length);
       const get = l => { const i = hdr.findIndex(h => h.includes(l)); return i >= 0 ? (val[i + off] || []) : []; };
-      const cr = get("Cpn Rate"), lp = get("LiqPref"), cd = get("Call Date"), rt = get("Moodys"), dd = get("Distribution");
-      out.cpnRate = cr[0] || null; out.annAmt = cr[1] || null; out.liqPref = lp[0] || null; out.callPrice = lp[1] || null;
+      const lp = get("LiqPref"), cd = get("Call Date"), rt = get("Moodys"), dd = get("Distribution");
+      const cpnText = (val[0] || []).concat(off < 0 ? [] : (val[1] || [])).join(" ");
+      const cm = cpnText.match(/(\d+(?:\.\d+)?%|FixFloat|Reset Rate|Variable|n\.a\.)\s*(\$[\d.,]+|n\.a\.)?/i);
+      out.cpnRate = cm ? cm[1] : null;
+      out.annAmt = cm && cm[2] ? cm[2] : null;
+      out.liqPref = lp[0] || null; out.callPrice = lp[1] || null;
       out.callDate = cd[0] || null; out.maturity = cd[1] || null;
       const r = (rt || []).join(" ").split(/\s+/).filter(Boolean); out.moodys = r[0] || null; out.sp = r[1] || null;
       out.distDates = (dd[0] || "").replace(/Click for.*$/i, "").trim() || null;
