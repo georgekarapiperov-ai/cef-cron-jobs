@@ -35,6 +35,9 @@
     },
     "api/news.js": {
       "maxDuration": 60
+    },
+    "api/nav-data.js": {
+      "maxDuration": 30
     }
   }
 }
