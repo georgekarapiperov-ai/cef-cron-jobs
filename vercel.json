@@ -1,10 +1,5 @@
 {
-  "crons": [
-    {
-      "path": "/api/holdings-check",
-      "schedule": "0 7 * * 1-5"
-    }
-  ],
+  "crons": [],
   "functions": {
     "api/holdings-check.js": {
       "maxDuration": 180
@@ -38,6 +33,13 @@
     },
     "api/nav-data.js": {
       "maxDuration": 30
+    }
+  },
+  "git": {
+    "deploymentEnabled": {
+      "data-news": false,
+      "data-nav": false,
+      "data-holdings": false
     }
   }
 }
