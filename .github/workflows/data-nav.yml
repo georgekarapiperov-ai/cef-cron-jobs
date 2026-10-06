@@ -1,0 +1,37 @@
+name: Data - NAV
+# Runs the existing Vercel code in GitHub Actions with a file-based store (no Upstash) and publishes
+# the results to the data-nav branch, which the app reads directly. Free and unlimited for public repos.
+on:
+  schedule:
+    - cron: "15 12 * * 1-5"   # 8:15 AM New York (summer time)
+    - cron: "15 13 * * 1-5"   # 8:15 AM New York (winter time) / second pass
+    - cron: "30 23 * * 1-5"   # 7:30 PM New York — funds that publish the same evening
+  workflow_dispatch: {}
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Use the file-based store instead of Upstash
+        run: |
+          npm pkg set type=module
+          mkdir -p node_modules/@vercel/kv
+          cp scripts/kv-file-shim.mjs node_modules/@vercel/kv/index.mjs
+          echo '{"name":"@vercel/kv","type":"module","exports":"./index.mjs"}' > node_modules/@vercel/kv/package.json
+      - name: Get the previous data
+        run: |
+          mkdir -p out
+          if git fetch -q --depth=1 origin data-nav; then git --work-tree=out checkout FETCH_HEAD -- . ; else echo "first run"; fi
+      - name: Build
+        run: node scripts/run-job.mjs nav out
+
+      - name: Publish to the data-nav branch
+        run: bash scripts/publish-data.sh out data-nav
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
