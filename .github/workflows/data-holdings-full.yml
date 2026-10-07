@@ -1,7 +1,7 @@
 name: Data - Holdings (SEC N-PORT + sponsors)
 # Full holdings of every CEF -> branch data-holdings-full:
 #   holdings-sec.json.gz      SEC N-PORT (every holding; only funds with a NEW filing are downloaded again)
-#   holdings-sponsor.json     sponsor websites (BlackRock top-10, Nuveen full lists; monthly, newer than SEC)
+#   holdings-sponsor.json     sponsor websites (BlackRock + Calamos top-10, Nuveen full lists; monthly, newer than SEC)
 #   holdings-sec-index.json, figi-cache.json
 # Needs repository secret SEC_USER_AGENT (SEC rule: name + email). Optional secret OPENFIGI_API_KEY (faster first run).
 on:

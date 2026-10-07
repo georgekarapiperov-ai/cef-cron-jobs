@@ -6,6 +6,10 @@
 Plugins (one per sponsor family; add more the same way):
   blackrock  BlackRock product list -> each closed-end fund's holdings CSV (top 10, monthly)
   nuveen     one Excel file with the FULL holdings of every Nuveen closed-end fund (monthly)
+  calamos    calamos.com fund pages -> top 10 (monthly)
+Checked and NOT used (2026-10-07): Eaton Vance and Gabelli block programs (Akamai / Cloudflare bot walls — not bypassed);
+PIMCO needs a terms/role click-through; Western Asset (Franklin Templeton), Cohen & Steers and Virtus only publish
+quarterly lists with the same date as the SEC filing; abrdn has no holdings page. Those funds use the SEC N-PORT list.
 
 Tickers: from the sponsor file when it has them; otherwise the holding's name is matched against the same fund's
 SEC N-PORT list (jobs/out/holdings-sec.json.gz) and that row's ticker / class / stand-in ETF is used.
@@ -38,9 +42,10 @@ def say(m):
 def mdy(s):
     """'08/31/2026' or 'Aug 31, 2026' -> '2026-08-31'."""
     s = str(s or "").strip()
-    m = re.fullmatch(r"(\d{1,2})/(\d{1,2})/(\d{4})", s)
+    m = re.fullmatch(r"(\d{1,2})/(\d{1,2})/(\d{4}|\d{2})", s)
     if m:
-        return f"{m.group(3)}-{int(m.group(1)):02d}-{int(m.group(2)):02d}"
+        y = m.group(3) if len(m.group(3)) == 4 else "20" + m.group(3)
+        return f"{y}-{int(m.group(1)):02d}-{int(m.group(2)):02d}"
     try:
         return datetime.strptime(s, "%b %d, %Y").strftime("%Y-%m-%d")
     except ValueError:
@@ -81,16 +86,19 @@ def best_sec_match(name, sec_rows):
     if top < 0.5:
         return None
     best = [r for j, r in scored if j == top]
-    tickers = {r.get("t") for r in best}
-    pick = max(best, key=lambda r: r.get("p") or 0)
-    if len(tickers) > 1:
+    with_t = [r for r in best if r.get("t")]
+    pick = max(with_t or best, key=lambda r: r.get("p") or 0)
+    tickers = {r["t"] for r in with_t}
+    # several DIFFERENT tickers: fine for plain stocks (share classes GOOGL / GOOG price alike), a guess for
+    # preferreds / notes of one issuer -> don't borrow a ticker then
+    if len(tickers) > 1 and pick.get("c") not in ("equity", "fund"):
         return {**pick, "t": None, "ambiguous": True}
     return pick
 
 
 # sponsor security type -> (class, stand-in ETF)
 TYPE_MAP = [
-    (r"common stock|reit common|depository receipt", ("equity", None)),
+    (r"common stock|reit common|depository receipt|^equit", ("equity", None)),
     (r"exchange traded fund|closed ended|mutual fund", ("fund", None)),
     (r"preferred|contingent capital", ("preferred", "PFF")),
     (r"term loan|delay draw|loan", ("loan", "BKLN")),
@@ -98,7 +106,7 @@ TYPE_MAP = [
     (r"treasury|government", ("bond", "IEF")),
     (r"mortgage backed|cmo|collateralized mortgage", ("abs", "MBB")),
     (r"asset backed|clo|collateralized loan", ("abs", "BKLN")),
-    (r"convertible", ("convertible", "CWB")),
+    (r"convertible|decs|aces|prides|mandator", ("convertible", "CWB")),
     (r"corporate bond|reit debt|bond|note", ("bond", None)),          # HYG / LQD by coupon
     (r"option|warrant|swap|future|forward", ("derivative", None)),
     (r"cash|money market|repo", ("cash", None)),
@@ -235,7 +243,43 @@ class Nuveen:
         return funds
 
 
-PLUGINS = {"blackrock": BlackRock, "nuveen": Nuveen}
+class Calamos:
+    """calamos.com fund pages: 'Top 10 holdings' table (Company / Security Type / % of Net Assets), monthly.
+    (The 'view all holdings' PDF is a month older — the same date as the SEC filing — so it adds nothing.)"""
+    name = "Calamos website"
+    LIST = "https://www.calamos.com/funds/closed-end/"
+
+    async def run(self, c, tickers):
+        import html as htmllib
+        pages = re.findall(r'href="(/funds/closed-end/[a-z0-9-]+-([a-z]{2,5})/)"', (await c.get(self.LIST)).text)
+        out = {}
+        for path, t in sorted(set(pages)):
+            t = t.upper()
+            if t not in tickers:
+                continue
+            url = "https://www.calamos.com" + path
+            try:
+                page = (await c.get(url)).text
+                i = page.find("% of Net Assets")
+                tbl = page[page.rfind("<table", 0, i): page.find("</table>", i)] if i > 0 else ""
+                head = re.sub(r"<[^>]+>", " ", page[max(0, i - 6000): i])
+                dates = re.findall(r"As of (\d{1,2}/\d{1,2}/\d{2,4})", head)
+                rows = []
+                for tr in re.findall(r"<tr>([\s\S]*?)</tr>", tbl):
+                    cells = [htmllib.unescape(re.sub(r"<[^>]+>", "", x)).strip() for x in re.findall(r"<td[^>]*>([\s\S]*?)</td>", tr)]
+                    if len(cells) >= 3 and cells[0] and cells[0].lower() not in ("total", "totals"):
+                        rows.append({"n": cells[0], "type": cells[1], "p": pct(cells[2])})
+                if rows and dates:
+                    out[t] = {"asOf": mdy(dates[-1]), "url": url, "full": False, "rows": rows, "basis": "% of net assets"}
+                else:
+                    out[t] = {"error": "top-10 table not found on the Calamos page"}
+            except Exception as e:  # noqa: BLE001
+                out[t] = {"error": f"{type(e).__name__}: {e}"}
+            await asyncio.sleep(PAUSE_S)
+        return out
+
+
+PLUGINS = {"blackrock": BlackRock, "nuveen": Nuveen, "calamos": Calamos}
 
 
 async def main():
@@ -280,7 +324,7 @@ async def main():
                     continue
                 rows, summ = finish(f["rows"], (sec.get(t) or {}).get("holdings") or [])
                 funds[t] = {"ticker": t, "source": plug.name, "url": f["url"], "asOf": f["asOf"], "full": f["full"],
-                            "weightBasis": "% of portfolio (sponsor)", **summ, "holdings": rows,
+                            "weightBasis": f.get("basis", "% of portfolio (sponsor)"), **summ, "holdings": rows,
                             "checkedAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")}
                 ok += 1
             say(f"{name}: {ok} funds in {time.time() - t0:.0f}s, {sum(1 for f in got.values() if 'error' in f)} problems")
