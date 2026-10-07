@@ -11,8 +11,8 @@
  },
  {
   "ticker": "ACP",
-  "sector": "HYG",
-  "name": "AllianceBernstein Global High Income"
+  "sector": "BKLN",
+  "name": "abrdn Income Credit Strategies Fund"
  },
  {
   "ticker": "TEI",
@@ -22,7 +22,7 @@
  {
   "ticker": "MMU",
   "sector": "MUB",
-  "name": "MFS Municipal Income Trust"
+  "name": "Western Asset Managed Municipals"
  },
  {
   "ticker": "NAD",
@@ -72,7 +72,7 @@
  {
   "ticker": "MMT",
   "sector": "AGG",
-  "name": "MFS Multimarket Income Trust"
+  "name": "Aberdeen Multi-Market Income"
  },
  {
   "ticker": "GOF",
@@ -221,8 +221,8 @@
  },
  {
   "ticker": "FRA",
-  "sector": "PFF",
-  "name": "Cohen & Steers Ltd Duration Preferred & Income"
+  "sector": "BKLN",
+  "name": "BlackRock Floating Rate Inc Strategies"
  },
  {
   "ticker": "EFR",
@@ -322,12 +322,12 @@
  {
   "ticker": "MMD",
   "sector": "MUB",
-  "name": "MFS Municipal Income Trust II?/High Income Municipal"
+  "name": "NYLIM MacKay DefinedTerm Muni Opps Fund"
  },
  {
   "ticker": "EAD",
   "sector": "HYG",
-  "name": "Wells Fargo Income Opportunities"
+  "name": "Allspring Income Opps"
  },
  {
   "ticker": "PDT",
@@ -342,7 +342,7 @@
  {
   "ticker": "DLY",
   "sector": "AGG",
-  "name": "Western Asset Diversified Income Fund"
+  "name": "DoubleLine Yield Opportunities Fund"
  },
  {
   "ticker": "DSL",
@@ -376,8 +376,8 @@
  },
  {
   "ticker": "MCN",
-  "sector": "AGG",
-  "name": "MFS Charter Income Trust"
+  "sector": "SPY",
+  "name": "XAI Madison Equity Premium Income Fund"
  },
  {
   "ticker": "ZTR",
@@ -422,7 +422,7 @@
  {
   "ticker": "FSSL",
   "sector": "BKLN",
-  "name": "First Trust Senior Loan Fund"
+  "name": "FS Specialty Lending Fund"
  },
  {
   "ticker": "EDF",
@@ -446,8 +446,8 @@
  },
  {
   "ticker": "SWZ",
-  "sector": "AGG",
-  "name": "Swiss Helvetia Fund"
+  "sector": "SPY",
+  "name": "Total Return Securities Fund"
  },
  {
   "ticker": "BLW",
@@ -536,8 +536,8 @@
  },
  {
   "ticker": "PSUS",
-  "sector": "PFF",
-  "name": "Fidus Investment / N/A"
+  "sector": "SPY",
+  "name": "Pershing Square USA, Ltd"
  },
  {
   "ticker": "RA",
@@ -616,8 +616,8 @@
  },
  {
   "ticker": "LEO",
-  "sector": "AGG",
-  "name": "Saba Capital Income & Growth Fund"
+  "sector": "MUB",
+  "name": "BNY Mellon Strategic Municipals"
  },
  {
   "ticker": "HYI",
@@ -641,8 +641,8 @@
  },
  {
   "ticker": "MCI",
-  "sector": "AGG",
-  "name": "MFS Intermediate High Income Fund"
+  "sector": "HYG",
+  "name": "Barings Corporate Investors"
  },
  {
   "ticker": "EIC",
@@ -651,8 +651,8 @@
  },
  {
   "ticker": "AWF",
-  "sector": "AGG",
-  "name": "Alliance World Dollar Government Fund II"
+  "sector": "HYG",
+  "name": "AllianceBernstein Global High Income"
  },
  {
   "ticker": "DBL",
@@ -667,7 +667,7 @@
  {
   "ticker": "PCM",
   "sector": "AGG",
-  "name": "PIMCO Commercial Mortgage Securities Trust"
+  "name": "PCM Fund"
  },
  {
   "ticker": "EVF",
@@ -731,8 +731,8 @@
  },
  {
   "ticker": "RVI",
-  "sector": "AGG",
-  "name": "Voya Infrastructure Industrials & Materials II"
+  "sector": "SPY",
+  "name": "Robinhood Ventures Fund I"
  },
  {
   "ticker": "RFMZ",
@@ -856,13 +856,13 @@
  },
  {
   "ticker": "CFND",
-  "sector": "AGG",
-  "name": "Corcept? / N/A (Small closed-end vehicle)"
+  "sector": "SPY",
+  "name": "C1 Fund Inc."
  },
  {
   "ticker": "PAXS",
   "sector": "AGG",
-  "name": "N/A closed-end fund"
+  "name": "PIMCO Access Income"
  },
  {
   "ticker": "BTZ",
@@ -901,8 +901,8 @@
  },
  {
   "ticker": "SPMC",
-  "sector": "AGG",
-  "name": "Special Purpose Mortgage Corp / N/A"
+  "sector": "BKLN",
+  "name": "Sound Point Meridian Capital Inc"
  },
  {
   "ticker": "NAZ",
@@ -971,8 +971,8 @@
  },
  {
   "ticker": "GRX",
-  "sector": "AGG",
-  "name": "Guggenheim Credit Real Estate Income Fund"
+  "sector": "XLV",
+  "name": "Gabelli Healthcare & Wellness Trust"
  },
  {
   "ticker": "HPF",
@@ -1121,8 +1121,8 @@
  },
  {
   "ticker": "FUND",
-  "sector": "AGG",
-  "name": "Special Opportunities Fund"
+  "sector": "SPY",
+  "name": "Sprott Focus Trust"
  },
  {
   "ticker": "GAM",
@@ -1136,8 +1136,8 @@
  },
  {
   "ticker": "GRF",
-  "sector": "AGG",
-  "name": "Guggenheim Strategic Opportunities II / N/A"
+  "sector": "SPY",
+  "name": "Eagle Capital Growth"
  },
  {
   "ticker": "HEQ",
@@ -1146,8 +1146,8 @@
  },
  {
   "ticker": "HERZ",
-  "sector": "AGG",
-  "name": "N/A closed-end vehicle"
+  "sector": "SPY",
+  "name": "Herzfeld Credit Income Fund"
  },
  {
   "ticker": "IAF",
@@ -1176,13 +1176,13 @@
  },
  {
   "ticker": "PWRL",
-  "sector": "AGG",
-  "name": "Legg Mason / N/A"
+  "sector": "QQQ",
+  "name": "Powerlaw Corp."
  },
  {
   "ticker": "BANX",
-  "sector": "AGG",
-  "name": "BRT Apartments / N/A"
+  "sector": "SPY",
+  "name": "ArrowMark Financial Corp"
  },
  {
   "ticker": "NMT",
@@ -1196,8 +1196,8 @@
  },
  {
   "ticker": "BOT",
-  "sector": "AGG",
-  "name": "BOT closed-end vehicle / N/A"
+  "sector": "QQQ",
+  "name": "RoboStrategy Inc"
  },
  {
   "ticker": "PNI",
@@ -1286,8 +1286,8 @@
  },
  {
   "ticker": "MPV",
-  "sector": "MUB",
-  "name": "BlackRock Maryland Municipal Bond Trust"
+  "sector": "HYG",
+  "name": "Barings Participation Invs"
  },
  {
   "ticker": "RCG",
