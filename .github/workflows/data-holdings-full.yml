@@ -1,10 +1,12 @@
-name: Data - Holdings (SEC N-PORT)
-# Full holdings of every CEF from SEC N-PORT filings -> branch data-holdings-sec (holdings-sec.json.gz,
-# holdings-sec-index.json, figi-cache.json). Daily: only funds with a NEW filing are downloaded again.
+name: Data - Holdings (SEC N-PORT + sponsors)
+# Full holdings of every CEF -> branch data-holdings-full:
+#   holdings-sec.json.gz      SEC N-PORT (every holding; only funds with a NEW filing are downloaded again)
+#   holdings-sponsor.json     sponsor websites (BlackRock top-10, Nuveen full lists; monthly, newer than SEC)
+#   holdings-sec-index.json, figi-cache.json
 # Needs repository secret SEC_USER_AGENT (SEC rule: name + email). Optional secret OPENFIGI_API_KEY (faster first run).
 on:
   schedule:
-    - cron: "30 12 * * 1-5"    # weekdays 8:30 AM New York — catches yesterday's N-PORT filings
+    - cron: "30 12 * * 1-5"    # weekdays 8:30 AM New York
   workflow_dispatch: {}
 permissions:
   contents: write
@@ -21,15 +23,18 @@ jobs:
       - name: Get the previous data (incl. the OpenFIGI cache)
         run: |
           mkdir -p out
-          if git fetch -q --depth=1 origin data-holdings-sec; then git --work-tree=out checkout FETCH_HEAD -- . ; else echo "first run"; fi
-      - name: Build
+          if git fetch -q --depth=1 origin data-holdings-full; then git --work-tree=out checkout FETCH_HEAD -- . ; else echo "first run"; fi
+      - name: SEC N-PORT
         run: python jobs/holdings_sec.py --out out --cefs jobs/data/cefs.json --prefs jobs/data/prefs.json
         env:
           SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
           OPENFIGI_API_KEY: ${{ secrets.OPENFIGI_API_KEY }}
+      - name: Sponsor websites
+        run: python jobs/holdings_sponsors.py --out out --cefs jobs/data/cefs.json
+        continue-on-error: true     # a sponsor site being down must not block the SEC data
       - name: Check the result before publishing
         run: python -c "import gzip,json; d=json.loads(gzip.decompress(open('out/holdings-sec.json.gz','rb').read())); n=len(d['funds']); print(n,'funds'); assert n>=300, 'too few funds - not publishing'"
-      - name: Publish to the data-holdings-sec branch
-        run: bash scripts/publish-data.sh out data-holdings-sec
+      - name: Publish to the data-holdings-full branch
+        run: bash scripts/publish-data.sh out data-holdings-full
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
