@@ -1,0 +1,1767 @@
+[
+ {
+  "ticker": "HIX",
+  "sector": "HYG",
+  "name": "Western Asset High Income Fund II"
+ },
+ {
+  "ticker": "NMZ",
+  "sector": "MUB",
+  "name": "Nuveen Municipal Credit Income"
+ },
+ {
+  "ticker": "ACP",
+  "sector": "HYG",
+  "name": "AllianceBernstein Global High Income"
+ },
+ {
+  "ticker": "TEI",
+  "sector": "EMB",
+  "name": "Templeton Emerging Markets Income"
+ },
+ {
+  "ticker": "MMU",
+  "sector": "MUB",
+  "name": "MFS Municipal Income Trust"
+ },
+ {
+  "ticker": "NAD",
+  "sector": "MUB",
+  "name": "Nuveen Quality Municipal Income"
+ },
+ {
+  "ticker": "FSCO",
+  "sector": "BKLN",
+  "name": "FS Credit Opportunities Corp"
+ },
+ {
+  "ticker": "JQC",
+  "sector": "BKLN",
+  "name": "Nuveen Credit Strategies Income"
+ },
+ {
+  "ticker": "JFR",
+  "sector": "BKLN",
+  "name": "Nuveen Floating Rate Income"
+ },
+ {
+  "ticker": "PHK",
+  "sector": "AGG",
+  "name": "PIMCO High Income Fund"
+ },
+ {
+  "ticker": "NDMO",
+  "sector": "AGG",
+  "name": "Nuveen Diversified Multi-Asset Income"
+ },
+ {
+  "ticker": "PPT",
+  "sector": "BKLN",
+  "name": "Putnam Premier Income Trust"
+ },
+ {
+  "ticker": "NZF",
+  "sector": "MUB",
+  "name": "Nuveen Municipal Credit Income"
+ },
+ {
+  "ticker": "VGM",
+  "sector": "MUB",
+  "name": "Invesco Trust for Value Municipal Income"
+ },
+ {
+  "ticker": "MMT",
+  "sector": "AGG",
+  "name": "MFS Multimarket Income Trust"
+ },
+ {
+  "ticker": "GOF",
+  "sector": "HYG",
+  "name": "Guggenheim Strategic Opportunities"
+ },
+ {
+  "ticker": "BPRE",
+  "sector": "AGG",
+  "name": "Barings Private Credit Corp"
+ },
+ {
+  "ticker": "BTT",
+  "sector": "MUB",
+  "name": "BlackRock Municipal Target Term"
+ },
+ {
+  "ticker": "RLTY",
+  "sector": "AGG",
+  "name": "Cohen & Steers Real Estate Opportunities & Income"
+ },
+ {
+  "ticker": "NUV",
+  "sector": "MUB",
+  "name": "Nuveen Municipal Value Fund"
+ },
+ {
+  "ticker": "NMCO",
+  "sector": "AGG",
+  "name": "Nuveen Mortgage Opportunity Term Fund"
+ },
+ {
+  "ticker": "PML",
+  "sector": "MUB",
+  "name": "PIMCO Municipal Income Fund"
+ },
+ {
+  "ticker": "FPF",
+  "sector": "AGG",
+  "name": "First Trust Intermediate Duration Preferred"
+ },
+ {
+  "ticker": "JPC",
+  "sector": "PFF",
+  "name": "Nuveen Preferred & Income Opportunities"
+ },
+ {
+  "ticker": "NVG",
+  "sector": "MUB",
+  "name": "Nuveen AMT-Free Municipal Credit Income"
+ },
+ {
+  "ticker": "NBB",
+  "sector": "MUB",
+  "name": "Nuveen Taxable Municipal Income"
+ },
+ {
+  "ticker": "IGD",
+  "sector": "AGG",
+  "name": "Voya Global Diversified Payment"
+ },
+ {
+  "ticker": "NPFD",
+  "sector": "MUB",
+  "name": "Nuveen Variable Rate Preferred & Income"
+ },
+ {
+  "ticker": "ERC",
+  "sector": "AGG",
+  "name": "Wells Fargo Multi-Sector Income Fund"
+ },
+ {
+  "ticker": "CIK",
+  "sector": "HYG",
+  "name": "Credit Suisse Asset Mgmt Income Fund"
+ },
+ {
+  "ticker": "NEA",
+  "sector": "MUB",
+  "name": "Nuveen AMT-Free Quality Municipal Income"
+ },
+ {
+  "ticker": "DHY",
+  "sector": "HYG",
+  "name": "Credit Suisse High Yield Bond Fund"
+ },
+ {
+  "ticker": "VKI",
+  "sector": "MUB",
+  "name": "Invesco Advantage Municipal Income Trust II"
+ },
+ {
+  "ticker": "BGT",
+  "sector": "BKLN",
+  "name": "BlackRock Floating Rate Income Strategies"
+ },
+ {
+  "ticker": "DSU",
+  "sector": "AGG",
+  "name": "BlackRock Debt Strategies Fund"
+ },
+ {
+  "ticker": "HGLB",
+  "sector": "AGG",
+  "name": "BrightSpire? / Highland Global Allocation"
+ },
+ {
+  "ticker": "CEF",
+  "sector": "AGG",
+  "name": "Sprott Physical Gold and Silver Trust"
+ },
+ {
+  "ticker": "IIM",
+  "sector": "MUB",
+  "name": "Invesco Value Municipal Income Trust"
+ },
+ {
+  "ticker": "FTF",
+  "sector": "AGG",
+  "name": "Franklin Limited Duration Income Trust"
+ },
+ {
+  "ticker": "MUC",
+  "sector": "MUB",
+  "name": "BlackRock MuniHoldings California"
+ },
+ {
+  "ticker": "VGI",
+  "sector": "AGG",
+  "name": "Virtus Global Multi-Sector Income"
+ },
+ {
+  "ticker": "PDI",
+  "sector": "AGG",
+  "name": "PIMCO Dynamic Income Fund"
+ },
+ {
+  "ticker": "PCQ",
+  "sector": "AGG",
+  "name": "PIMCO California Municipal Income II"
+ },
+ {
+  "ticker": "BDJ",
+  "sector": "AGG",
+  "name": "BlackRock Enhanced Equity Dividend Trust"
+ },
+ {
+  "ticker": "FRA",
+  "sector": "PFF",
+  "name": "Cohen & Steers Ltd Duration Preferred & Income"
+ },
+ {
+  "ticker": "EFR",
+  "sector": "BKLN",
+  "name": "Eaton Vance Senior Floating-Rate Trust"
+ },
+ {
+  "ticker": "EARN",
+  "sector": "AGG",
+  "name": "Ellington Residential Mortgage REIT"
+ },
+ {
+  "ticker": "FFC",
+  "sector": "PFF",
+  "name": "Flaherty & Crumrine Preferred Securities Income"
+ },
+ {
+  "ticker": "IGA",
+  "sector": "PFF",
+  "name": "Voya Global Advantage & Premium Opportunity"
+ },
+ {
+  "ticker": "GHY",
+  "sector": "HYG",
+  "name": "PGIM Global High Yield Fund"
+ },
+ {
+  "ticker": "BBN",
+  "sector": "AGG",
+  "name": "BlackRock Taxable Municipal Bond Trust"
+ },
+ {
+  "ticker": "WIW",
+  "sector": "HYG",
+  "name": "Western Asset Inflation-Linked Opportunities"
+ },
+ {
+  "ticker": "NAC",
+  "sector": "MUB",
+  "name": "Nuveen California Quality Municipal Income"
+ },
+ {
+  "ticker": "NKX",
+  "sector": "MUB",
+  "name": "Nuveen California AMT-Free Municipal Income"
+ },
+ {
+  "ticker": "OIA",
+  "sector": "AGG",
+  "name": "Invesco Municipal Income Opportunities Trust"
+ },
+ {
+  "ticker": "BGB",
+  "sector": "AGG",
+  "name": "Blackstone Strategic Credit 2027"
+ },
+ {
+  "ticker": "KIO",
+  "sector": "AGG",
+  "name": "KKR Income Opportunities Fund"
+ },
+ {
+  "ticker": "IDE",
+  "sector": "AGG",
+  "name": "Voya Infrastructure, Industrials & Materials"
+ },
+ {
+  "ticker": "PFL",
+  "sector": "AGG",
+  "name": "PIMCO Income Strategy Fund"
+ },
+ {
+  "ticker": "KTF",
+  "sector": "AGG",
+  "name": "Invesco Municipal Trust"
+ },
+ {
+  "ticker": "BIT",
+  "sector": "AGG",
+  "name": "BlackRock Multi-Sector Income Trust"
+ },
+ {
+  "ticker": "GGT",
+  "sector": "HYG",
+  "name": "Gabelli Multimedia Trust"
+ },
+ {
+  "ticker": "PTY",
+  "sector": "AGG",
+  "name": "PIMCO Corporate & Income Opportunity Fund"
+ },
+ {
+  "ticker": "EVT",
+  "sector": "SPY",
+  "name": "Eaton Vance Tax-Advantaged Dividend Income"
+ },
+ {
+  "ticker": "MMD",
+  "sector": "MUB",
+  "name": "MFS Municipal Income Trust II?/High Income Municipal"
+ },
+ {
+  "ticker": "EAD",
+  "sector": "HYG",
+  "name": "Wells Fargo Income Opportunities"
+ },
+ {
+  "ticker": "PDT",
+  "sector": "PFF",
+  "name": "John Hancock Premium Dividend Fund"
+ },
+ {
+  "ticker": "GLO",
+  "sector": "AGG",
+  "name": "Clough Global Opportunities Fund"
+ },
+ {
+  "ticker": "DLY",
+  "sector": "AGG",
+  "name": "Western Asset Diversified Income Fund"
+ },
+ {
+  "ticker": "DSL",
+  "sector": "AGG",
+  "name": "DoubleLine Income Solutions Fund"
+ },
+ {
+  "ticker": "EVV",
+  "sector": "AGG",
+  "name": "Eaton Vance Ltd Duration Income Fund"
+ },
+ {
+  "ticker": "MFM",
+  "sector": "MUB",
+  "name": "MFS Municipal Income Trust III"
+ },
+ {
+  "ticker": "VVR",
+  "sector": "BKLN",
+  "name": "Invesco Senior Income Trust"
+ },
+ {
+  "ticker": "IQI",
+  "sector": "AGG",
+  "name": "Invesco Quality Municipal Income Trust"
+ },
+ {
+  "ticker": "EMD",
+  "sector": "EMB",
+  "name": "Western Asset Emerging Markets Debt Fund"
+ },
+ {
+  "ticker": "MCN",
+  "sector": "AGG",
+  "name": "MFS Charter Income Trust"
+ },
+ {
+  "ticker": "ZTR",
+  "sector": "AGG",
+  "name": "Virtus Total Return Fund"
+ },
+ {
+  "ticker": "OPP",
+  "sector": "AGG",
+  "name": "RiverNorth/DoubleLine Strategic Opportunity"
+ },
+ {
+  "ticker": "MUJ",
+  "sector": "MUB",
+  "name": "BlackRock New Jersey Municipal Bond Trust"
+ },
+ {
+  "ticker": "CCIF",
+  "sector": "AGG",
+  "name": "CION Ares Diversified Credit Fund"
+ },
+ {
+  "ticker": "BGY",
+  "sector": "AGG",
+  "name": "BlackRock International Growth & Income"
+ },
+ {
+  "ticker": "MHD",
+  "sector": "MUB",
+  "name": "BlackRock MuniHoldings Fund"
+ },
+ {
+  "ticker": "MGF",
+  "sector": "AGG",
+  "name": "MFS Government Markets Income Trust"
+ },
+ {
+  "ticker": "DFP",
+  "sector": "PFF",
+  "name": "Flaherty & Crumrine Dynamic Preferred & Income"
+ },
+ {
+  "ticker": "FSSL",
+  "sector": "BKLN",
+  "name": "First Trust Senior Loan Fund"
+ },
+ {
+  "ticker": "EDF",
+  "sector": "EMB",
+  "name": "Stone Harbor Emerging Markets Income Fund"
+ },
+ {
+  "ticker": "LDP",
+  "sector": "CWB",
+  "name": "Cohen & Steers Ltd Duration Preferred & Income II"
+ },
+ {
+  "ticker": "PTA",
+  "sector": "AGG",
+  "name": "Pimco Tax Advantaged Municipal? (Prudential N/A)"
+ },
+ {
+  "ticker": "FTHY",
+  "sector": "AGG",
+  "name": "First Trust High Yield Opportunities 2027"
+ },
+ {
+  "ticker": "SWZ",
+  "sector": "AGG",
+  "name": "Swiss Helvetia Fund"
+ },
+ {
+  "ticker": "BLW",
+  "sector": "AGG",
+  "name": "BlackRock Ltd Duration Income Trust"
+ },
+ {
+  "ticker": "NHS",
+  "sector": "AGG",
+  "name": "Neuberger Berman High Yield Strategies"
+ },
+ {
+  "ticker": "EOD",
+  "sector": "AGG",
+  "name": "Wells Fargo Global Dividend Opportunity"
+ },
+ {
+  "ticker": "MUA",
+  "sector": "MUB",
+  "name": "BlackRock MuniAssets Fund"
+ },
+ {
+  "ticker": "HPS",
+  "sector": "PFF",
+  "name": "John Hancock Preferred Income Fund II"
+ },
+ {
+  "ticker": "EFT",
+  "sector": "BKLN",
+  "name": "Eaton Vance Floating-Rate Income Trust"
+ },
+ {
+  "ticker": "VMO",
+  "sector": "MUB",
+  "name": "Invesco Municipal Opportunity Trust"
+ },
+ {
+  "ticker": "IFN",
+  "sector": "INDA",
+  "name": "The India Fund"
+ },
+ {
+  "ticker": "DXYZ",
+  "sector": "AGG",
+  "name": "Destiny Tech100"
+ },
+ {
+  "ticker": "MQY",
+  "sector": "AGG",
+  "name": "BlackRock MuniYield Quality Fund"
+ },
+ {
+  "ticker": "BKT",
+  "sector": "AGG",
+  "name": "BlackRock Income Trust"
+ },
+ {
+  "ticker": "BGX",
+  "sector": "BKLN",
+  "name": "Blackstone/GSO Long-Short Credit Income"
+ },
+ {
+  "ticker": "HFRO",
+  "sector": "HYG",
+  "name": "Highland Income Fund"
+ },
+ {
+  "ticker": "JLS",
+  "sector": "AGG",
+  "name": "Nuveen Mortgage & Income Fund"
+ },
+ {
+  "ticker": "VKQ",
+  "sector": "MUB",
+  "name": "Invesco Municipal Trust"
+ },
+ {
+  "ticker": "NRK",
+  "sector": "AGG",
+  "name": "Nuveen New York AMT-Free Municipal Income"
+ },
+ {
+  "ticker": "PFN",
+  "sector": "AGG",
+  "name": "PIMCO Income Strategy Fund II"
+ },
+ {
+  "ticker": "PSUS",
+  "sector": "PFF",
+  "name": "Fidus Investment / N/A"
+ },
+ {
+  "ticker": "RA",
+  "sector": "AGG",
+  "name": "Brookfield Real Assets Income Fund"
+ },
+ {
+  "ticker": "MHF",
+  "sector": "MUB",
+  "name": "Western Asset Municipal High Income Fund"
+ },
+ {
+  "ticker": "ARDC",
+  "sector": "BKLN",
+  "name": "Ares Dynamic Credit Allocation Fund"
+ },
+ {
+  "ticker": "EVN",
+  "sector": "MUB",
+  "name": "Eaton Vance Municipal Income Trust"
+ },
+ {
+  "ticker": "SPE",
+  "sector": "AGG",
+  "name": "Special Opportunities Fund"
+ },
+ {
+  "ticker": "BGH",
+  "sector": "HYG",
+  "name": "BlackRock Corporate High Yield Fund VI"
+ },
+ {
+  "ticker": "RMM",
+  "sector": "AGG",
+  "name": "Western Asset Municipal Partners Fund II"
+ },
+ {
+  "ticker": "HTD",
+  "sector": "AGG",
+  "name": "John Hancock Tax-Advantaged Dividend Income"
+ },
+ {
+  "ticker": "EIM",
+  "sector": "MUB",
+  "name": "Eaton Vance Municipal Income Trust"
+ },
+ {
+  "ticker": "HYT",
+  "sector": "HYG",
+  "name": "BlackRock Corporate High Yield Fund"
+ },
+ {
+  "ticker": "NAN",
+  "sector": "MUB",
+  "name": "Nuveen New York AMT-Free Municipal Income"
+ },
+ {
+  "ticker": "PFD",
+  "sector": "PFF",
+  "name": "Flaherty & Crumrine Preferred and Income Securities"
+ },
+ {
+  "ticker": "ASGI",
+  "sector": "AGG",
+  "name": "abrdn Global Infrastructure Income Fund"
+ },
+ {
+  "ticker": "KF",
+  "sector": "EWY",
+  "name": "The Korea Fund"
+ },
+ {
+  "ticker": "EHI",
+  "sector": "AGG",
+  "name": "Western Asset Global High Income Fund"
+ },
+ {
+  "ticker": "LEO",
+  "sector": "AGG",
+  "name": "Saba Capital Income & Growth Fund"
+ },
+ {
+  "ticker": "HYI",
+  "sector": "HYG",
+  "name": "Western Asset High Yield Defined Opportunity"
+ },
+ {
+  "ticker": "ECF",
+  "sector": "AGG",
+  "name": "Ellsworth Growth and Income Fund"
+ },
+ {
+  "ticker": "PDO",
+  "sector": "AGG",
+  "name": "PIMCO Dynamic Income Opportunities Fund"
+ },
+ {
+  "ticker": "BHK",
+  "sector": "AGG",
+  "name": "BlackRock Core Bond Trust"
+ },
+ {
+  "ticker": "MCI",
+  "sector": "AGG",
+  "name": "MFS Intermediate High Income Fund"
+ },
+ {
+  "ticker": "EIC",
+  "sector": "BKLN",
+  "name": "Eagle Point Institutional Income Fund"
+ },
+ {
+  "ticker": "AWF",
+  "sector": "AGG",
+  "name": "Alliance World Dollar Government Fund II"
+ },
+ {
+  "ticker": "DBL",
+  "sector": "AGG",
+  "name": "DoubleLine Opportunistic Credit Fund"
+ },
+ {
+  "ticker": "VBF",
+  "sector": "AGG",
+  "name": "Invesco Bond Fund"
+ },
+ {
+  "ticker": "PCM",
+  "sector": "AGG",
+  "name": "PIMCO Commercial Mortgage Securities Trust"
+ },
+ {
+  "ticker": "EVF",
+  "sector": "BKLN",
+  "name": "Eaton Vance Senior Income Trust"
+ },
+ {
+  "ticker": "FLC",
+  "sector": "PFF",
+  "name": "Flaherty & Crumrine Total Return Fund"
+ },
+ {
+  "ticker": "EVG",
+  "sector": "AGG",
+  "name": "Eaton Vance Short Duration Diversified Income"
+ },
+ {
+  "ticker": "RSF",
+  "sector": "AGG",
+  "name": "RiverNorth Specialty Finance Corp"
+ },
+ {
+  "ticker": "AEF",
+  "sector": "EEM",
+  "name": "abrdn Emerging Markets Equity Income Fund"
+ },
+ {
+  "ticker": "IAE",
+  "sector": "AGG",
+  "name": "Voya Emerging Markets High Dividend Equity"
+ },
+ {
+  "ticker": "WDI",
+  "sector": "AGG",
+  "name": "Western Asset Diversified Income Fund II"
+ },
+ {
+  "ticker": "GUG",
+  "sector": "AGG",
+  "name": "Guggenheim Credit Income Fund"
+ },
+ {
+  "ticker": "ISD",
+  "sector": "HYG",
+  "name": "PGIM High Yield Bond Fund"
+ },
+ {
+  "ticker": "FAX",
+  "sector": "AGG",
+  "name": "abrdn Asia-Pacific Income Fund"
+ },
+ {
+  "ticker": "VLT",
+  "sector": "AGG",
+  "name": "Invesco Value Municipal Income Trust II"
+ },
+ {
+  "ticker": "NPCT",
+  "sector": "AGG",
+  "name": "Nuveen Preferred & Convertible Income Term Fund"
+ },
+ {
+  "ticker": "RVI",
+  "sector": "AGG",
+  "name": "Voya Infrastructure Industrials & Materials II"
+ },
+ {
+  "ticker": "RFMZ",
+  "sector": "AGG",
+  "name": "Voya Rate Advantage Municipal Income Fund"
+ },
+ {
+  "ticker": "GLV",
+  "sector": "SPY",
+  "name": "Clough Global Dividend and Income Fund"
+ },
+ {
+  "ticker": "TDF",
+  "sector": "FXI",
+  "name": "Templeton Dragon Fund"
+ },
+ {
+  "ticker": "PSF",
+  "sector": "BKLN",
+  "name": "Cohen & Steers Select Preferred and Income Fund"
+ },
+ {
+  "ticker": "VCV",
+  "sector": "MUB",
+  "name": "Invesco California Value Municipal Income Trust"
+ },
+ {
+  "ticker": "EDD",
+  "sector": "EMB",
+  "name": "Stone Harbor Emerging Markets Total Income"
+ },
+ {
+  "ticker": "PGP",
+  "sector": "AGG",
+  "name": "PIMCO Global StocksPLUS & Income Fund"
+ },
+ {
+  "ticker": "JGH",
+  "sector": "AGG",
+  "name": "Nuveen Global High Income Fund"
+ },
+ {
+  "ticker": "PCN",
+  "sector": "AGG",
+  "name": "PIMCO Corporate & Income Strategy Fund"
+ },
+ {
+  "ticker": "MYI",
+  "sector": "MUB",
+  "name": "BlackRock Muni Intermediate Duration Fund"
+ },
+ {
+  "ticker": "DMB",
+  "sector": "AGG",
+  "name": "BlackRock Municipal Income Trust II"
+ },
+ {
+  "ticker": "GUT",
+  "sector": "AGG",
+  "name": "Gabelli Utility Trust"
+ },
+ {
+  "ticker": "DHF",
+  "sector": "AGG",
+  "name": "BNY Mellon High Yield Strategies Fund"
+ },
+ {
+  "ticker": "EOT",
+  "sector": "MUB",
+  "name": "Eaton Vance Municipal Income Term Trust"
+ },
+ {
+  "ticker": "GDL",
+  "sector": "AGG",
+  "name": "GDL Fund (General American Investors)"
+ },
+ {
+  "ticker": "NXP",
+  "sector": "AGG",
+  "name": "Nuveen Select Tax-Free Income Portfolio"
+ },
+ {
+  "ticker": "CET",
+  "sector": "AGG",
+  "name": "Central Securities Corporation"
+ },
+ {
+  "ticker": "HPI",
+  "sector": "PFF",
+  "name": "John Hancock Preferred Income Fund III"
+ },
+ {
+  "ticker": "TPZ",
+  "sector": "AGG",
+  "name": "Tortoise Power and Energy Infrastructure"
+ },
+ {
+  "ticker": "EMF",
+  "sector": "EEM",
+  "name": "Templeton Emerging Markets Fund"
+ },
+ {
+  "ticker": "RCS",
+  "sector": "AGG",
+  "name": "PIMCO Strategic Income Fund"
+ },
+ {
+  "ticker": "IIF",
+  "sector": "INDA",
+  "name": "Morgan Stanley India Investment Fund"
+ },
+ {
+  "ticker": "DMA",
+  "sector": "AGG",
+  "name": "BNY Mellon Alcentra Multi-Strategy Credit"
+ },
+ {
+  "ticker": "HIO",
+  "sector": "HYG",
+  "name": "Western Asset High Income Opportunity Fund"
+ },
+ {
+  "ticker": "CFND",
+  "sector": "AGG",
+  "name": "Corcept? / N/A (Small closed-end vehicle)"
+ },
+ {
+  "ticker": "PAXS",
+  "sector": "AGG",
+  "name": "N/A closed-end fund"
+ },
+ {
+  "ticker": "BTZ",
+  "sector": "AGG",
+  "name": "BlackRock Credit Allocation Income Trust"
+ },
+ {
+  "ticker": "IGR",
+  "sector": "AGG",
+  "name": "CBRE Global Real Estate Income Fund"
+ },
+ {
+  "ticker": "DSM",
+  "sector": "MUB",
+  "name": "BlackRock Municipal Income Trust"
+ },
+ {
+  "ticker": "SCOP",
+  "sector": "AGG",
+  "name": "Angel Oak Financial Strategies Income Term"
+ },
+ {
+  "ticker": "FINS",
+  "sector": "AGG",
+  "name": "Financial Investors Trust / N/A"
+ },
+ {
+  "ticker": "BRW",
+  "sector": "AGG",
+  "name": "Saba Capital Income & Growth Fund II"
+ },
+ {
+  "ticker": "NXDT",
+  "sector": "AGG",
+  "name": "NexPoint Diversified Real Estate Trust"
+ },
+ {
+  "ticker": "SPMC",
+  "sector": "AGG",
+  "name": "Special Purpose Mortgage Corp / N/A"
+ },
+ {
+  "ticker": "NAZ",
+  "sector": "MUB",
+  "name": "Nuveen Arizona Premium Income Municipal Fund"
+ },
+ {
+  "ticker": "DMO",
+  "sector": "AGG",
+  "name": "Western Asset Mortgage Defined Opportunity"
+ },
+ {
+  "ticker": "GBAB",
+  "sector": "MUB",
+  "name": "Guggenheim Taxable Municipal Bond & Investment Grade"
+ },
+ {
+  "ticker": "GDO",
+  "sector": "AGG",
+  "name": "Western Asset Global Corporate Defined Opportunity"
+ },
+ {
+  "ticker": "BWG",
+  "sector": "AGG",
+  "name": "BrandywineGLOBAL Global Income Opportunities"
+ },
+ {
+  "ticker": "AFB",
+  "sector": "MUB",
+  "name": "AllianceBernstein National Municipal Income"
+ },
+ {
+  "ticker": "WIA",
+  "sector": "HYG",
+  "name": "Western Asset Managed Municipals Fund"
+ },
+ {
+  "ticker": "TWN",
+  "sector": "EWT",
+  "name": "Taiwan Fund"
+ },
+ {
+  "ticker": "ECC",
+  "sector": "AGG",
+  "name": "Eagle Point Credit Company"
+ },
+ {
+  "ticker": "RVII",
+  "sector": "AGG",
+  "name": "BlackRock Health Sciences Trust II / N/A"
+ },
+ {
+  "ticker": "MXF",
+  "sector": "EWW",
+  "name": "Mexico Fund"
+ },
+ {
+  "ticker": "GCV",
+  "sector": "AGG",
+  "name": "Gabelli Convertible and Income Securities"
+ },
+ {
+  "ticker": "RGT",
+  "sector": "AGG",
+  "name": "Royce Global Value Trust"
+ },
+ {
+  "ticker": "GRX",
+  "sector": "AGG",
+  "name": "Guggenheim Credit Real Estate Income Fund"
+ },
+ {
+  "ticker": "HPF",
+  "sector": "PFF",
+  "name": "John Hancock Preferred Income Fund"
+ },
+ {
+  "ticker": "GGZ",
+  "sector": "AGG",
+  "name": "Gabelli Global Small & Mid Cap Value Trust"
+ },
+ {
+  "ticker": "PCF",
+  "sector": "AGG",
+  "name": "Putnam High Income Securities Fund"
+ },
+ {
+  "ticker": "VTN",
+  "sector": "MUB",
+  "name": "Invesco Trust for Investment Grade Municipals"
+ },
+ {
+  "ticker": "NBH",
+  "sector": "AGG",
+  "name": "Neuberger Berman MLP and Energy Income"
+ },
+ {
+  "ticker": "JHI",
+  "sector": "AGG",
+  "name": "John Hancock Investors Trust"
+ },
+ {
+  "ticker": "NRO",
+  "sector": "AGG",
+  "name": "Neuberger Berman Real Estate Securities Income"
+ },
+ {
+  "ticker": "ASA",
+  "sector": "GLD",
+  "name": "ASA Gold and Precious Metals Trust"
+ },
+ {
+  "ticker": "DTF",
+  "sector": "AGG",
+  "name": "DTF Tax-Free Income Fund"
+ },
+ {
+  "ticker": "TSI",
+  "sector": "AGG",
+  "name": "TCW Strategic Income Fund"
+ },
+ {
+  "ticker": "MYN",
+  "sector": "MUB",
+  "name": "BlackRock MuniYield New York Quality Fund"
+ },
+ {
+  "ticker": "NMS",
+  "sector": "MUB",
+  "name": "Nuveen Michigan Quality Municipal Income Fund"
+ },
+ {
+  "ticker": "MSD",
+  "sector": "EMB",
+  "name": "Morgan Stanley Emerging Markets Domestic Debt Fund"
+ },
+ {
+  "ticker": "PGZ",
+  "sector": "AGG",
+  "name": "Principal Real Estate Income Fund"
+ },
+ {
+  "ticker": "MIY",
+  "sector": "MUB",
+  "name": "BlackRock New York Municipal Income Trust II"
+ },
+ {
+  "ticker": "PFO",
+  "sector": "PFF",
+  "name": "Flaherty & Crumrine Dynamic Preferred Income Fund"
+ },
+ {
+  "ticker": "JOF",
+  "sector": "EWJ",
+  "name": "Japan Smaller Capitalization Fund"
+ },
+ {
+  "ticker": "TBLD",
+  "sector": "AGG",
+  "name": "Thornburg Income Builder Opportunities Trust"
+ },
+ {
+  "ticker": "JMM",
+  "sector": "AGG",
+  "name": "Nuveen Multi-Market Income Fund"
+ },
+ {
+  "ticker": "JHS",
+  "sector": "AGG",
+  "name": "John Hancock Income Securities Trust"
+ },
+ {
+  "ticker": "PAI",
+  "sector": "AGG",
+  "name": "Western Asset Municipal Partners Fund"
+ },
+ {
+  "ticker": "IGI",
+  "sector": "PFF",
+  "name": "Western Asset Investment Grade Income Fund"
+ },
+ {
+  "ticker": "ETX",
+  "sector": "AGG",
+  "name": "Eaton Vance Municipal Bond Fund II"
+ },
+ {
+  "ticker": "FMN",
+  "sector": "AGG",
+  "name": "Federated Hermes Premier Municipal Income"
+ },
+ {
+  "ticker": "WEA",
+  "sector": "AGG",
+  "name": "Western Asset High Income Fund"
+ },
+ {
+  "ticker": "FMY",
+  "sector": "AGG",
+  "name": "First Trust Municipal High Income"
+ },
+ {
+  "ticker": "FOF",
+  "sector": "AGG",
+  "name": "Cohen & Steers Closed-End Opportunity Fund"
+ },
+ {
+  "ticker": "VPV",
+  "sector": "MUB",
+  "name": "Invesco Pennsylvania Value Municipal Income Trust"
+ },
+ {
+  "ticker": "EEA",
+  "sector": "AGG",
+  "name": "European Equity Fund"
+ },
+ {
+  "ticker": "FUND",
+  "sector": "AGG",
+  "name": "Special Opportunities Fund"
+ },
+ {
+  "ticker": "GAM",
+  "sector": "EEM",
+  "name": "General American Investors Company"
+ },
+ {
+  "ticker": "GF",
+  "sector": "EWG",
+  "name": "The New Germany Fund"
+ },
+ {
+  "ticker": "GRF",
+  "sector": "AGG",
+  "name": "Guggenheim Strategic Opportunities II / N/A"
+ },
+ {
+  "ticker": "HEQ",
+  "sector": "AGG",
+  "name": "John Hancock Hedged Equity & Income Fund"
+ },
+ {
+  "ticker": "HERZ",
+  "sector": "AGG",
+  "name": "N/A closed-end vehicle"
+ },
+ {
+  "ticker": "IAF",
+  "sector": "AGG",
+  "name": "abrdn Australia Equity Fund"
+ },
+ {
+  "ticker": "XFLT",
+  "sector": "BKLN",
+  "name": "XAI Octagon Floating Rate & Alternative Income"
+ },
+ {
+  "ticker": "SOR",
+  "sector": "AGG",
+  "name": "Source Capital Inc."
+ },
+ {
+  "ticker": "SABA",
+  "sector": "AGG",
+  "name": "Saba Capital Income & Opportunities Fund"
+ },
+ {
+  "ticker": "CEV",
+  "sector": "AGG",
+  "name": "Eaton Vance California Municipal Income Trust"
+ },
+ {
+  "ticker": "PWRL",
+  "sector": "AGG",
+  "name": "Legg Mason / N/A"
+ },
+ {
+  "ticker": "BANX",
+  "sector": "AGG",
+  "name": "BRT Apartments / N/A"
+ },
+ {
+  "ticker": "NMT",
+  "sector": "AGG",
+  "name": "Nuveen Municipal Income Fund"
+ },
+ {
+  "ticker": "NNY",
+  "sector": "MUB",
+  "name": "Nuveen New York Municipal Value Fund 2"
+ },
+ {
+  "ticker": "BOT",
+  "sector": "AGG",
+  "name": "BOT closed-end vehicle / N/A"
+ },
+ {
+  "ticker": "PNI",
+  "sector": "AGG",
+  "name": "PIMCO New York Municipal Income Fund"
+ },
+ {
+  "ticker": "PMO",
+  "sector": "MUB",
+  "name": "PIMCO Municipal Income Fund II"
+ },
+ {
+  "ticker": "NPV",
+  "sector": "MUB",
+  "name": "Nuveen Virginia Quality Municipal Income Fund"
+ },
+ {
+  "ticker": "PIM",
+  "sector": "AGG",
+  "name": "Putnam Master Intermediate Income Trust"
+ },
+ {
+  "ticker": "NSLR",
+  "sector": "AGG",
+  "name": "Nuveen Select Tax-Free Income Portfolio II"
+ },
+ {
+  "ticker": "BMN",
+  "sector": "AGG",
+  "name": "BlackRock Municipal 2030 Target Term Trust"
+ },
+ {
+  "ticker": "NUW",
+  "sector": "MUB",
+  "name": "Nuveen Wisconsin Quality Municipal Income Fund"
+ },
+ {
+  "ticker": "OCCI",
+  "sector": "BKLN",
+  "name": "OFS Credit Company"
+ },
+ {
+  "ticker": "PMM",
+  "sector": "AGG",
+  "name": "Putnam Managed Municipal Income Trust"
+ },
+ {
+  "ticker": "SDHY",
+  "sector": "AGG",
+  "name": "PGIM Short Duration High Yield Opportunities"
+ },
+ {
+  "ticker": "NMI",
+  "sector": "MUB",
+  "name": "Nuveen Municipal Income Fund II"
+ },
+ {
+  "ticker": "BSL",
+  "sector": "BKLN",
+  "name": "Blackstone Senior Floating Rate Term Fund"
+ },
+ {
+  "ticker": "MIN",
+  "sector": "AGG",
+  "name": "MFS Intermediate Income Trust"
+ },
+ {
+  "ticker": "SBI",
+  "sector": "AGG",
+  "name": "Western Asset Municipal Defined Opportunity Trust"
+ },
+ {
+  "ticker": "BHV",
+  "sector": "AGG",
+  "name": "BlackRock Virginia Municipal Bond Trust"
+ },
+ {
+  "ticker": "CEE",
+  "sector": "VGK",
+  "name": "Central and Eastern Europe Fund"
+ },
+ {
+  "ticker": "MPA",
+  "sector": "MUB",
+  "name": "BlackRock MuniYield Pennsylvania Quality Fund"
+ },
+ {
+  "ticker": "MPV",
+  "sector": "MUB",
+  "name": "BlackRock Maryland Municipal Bond Trust"
+ },
+ {
+  "ticker": "RCG",
+  "sector": "AGG",
+  "name": "RENN Fund"
+ },
+ {
+  "ticker": "RMMZ",
+  "sector": "AGG",
+  "name": "Western Asset Municipal High Income Fund II"
+ },
+ {
+  "ticker": "RMI",
+  "sector": "AGG",
+  "name": "RiverNorth Managed Duration Municipal Income"
+ },
+ {
+  "ticker": "CAF",
+  "sector": "FXI",
+  "name": "Morgan Stanley China A Share Fund"
+ },
+ {
+  "ticker": "NCA",
+  "sector": "MUB",
+  "name": "Nuveen California Municipal Value Fund"
+ },
+ {
+  "ticker": "NIM",
+  "sector": "MUB",
+  "name": "Nuveen Select Maturities Municipal Fund"
+ },
+ {
+  "ticker": "RFM",
+  "sector": "AGG",
+  "name": "RiverNorth Flexible Municipal Income Fund"
+ },
+ {
+  "ticker": "MXE",
+  "sector": "EWW",
+  "name": "Mexico Equity and Income Fund"
+ },
+ {
+  "ticker": "IHD",
+  "sector": "EEM",
+  "name": "Voya Emerging Markets High Dividend Equity Fund"
+ },
+ {
+  "ticker": "USA",
+  "sector": "SPY",
+  "name": "Liberty All-Star Equity"
+ },
+ {
+  "ticker": "UTG",
+  "sector": "XLU",
+  "name": "Reaves Utility Income"
+ },
+ {
+  "ticker": "UTF",
+  "sector": "XLU",
+  "name": "Cohen & Steers Infrastructure"
+ },
+ {
+  "ticker": "DNP",
+  "sector": "XLU",
+  "name": "DNP Select Income"
+ },
+ {
+  "ticker": "BUI",
+  "sector": "XLU",
+  "name": "BlackRock Util, Infra & Power Opp"
+ },
+ {
+  "ticker": "MEGI",
+  "sector": "XLU",
+  "name": "NYLIM CBRE Glb Infra Megatrends"
+ },
+ {
+  "ticker": "GLU",
+  "sector": "XLU",
+  "name": "Gabelli Global Utility & Income"
+ },
+ {
+  "ticker": "DPG",
+  "sector": "XLU",
+  "name": "Duff & Phelps Utility and Infra"
+ },
+ {
+  "ticker": "ERH",
+  "sector": "XLU",
+  "name": "Allspring Utilities & High Income"
+ },
+ {
+  "ticker": "PEO",
+  "sector": "XLE",
+  "name": "Adams Natural Resources Fund"
+ },
+ {
+  "ticker": "BGR",
+  "sector": "XLE",
+  "name": "BlackRock Energy and Resources"
+ },
+ {
+  "ticker": "NXG",
+  "sector": "XLE",
+  "name": "NXG NextGen Infrastructure"
+ },
+ {
+  "ticker": "EMO",
+  "sector": "XLE",
+  "name": "ClearBridge Energy Midstream Opp"
+ },
+ {
+  "ticker": "BCX",
+  "sector": "XLE",
+  "name": "BlackRock Resources & Commodities"
+ },
+ {
+  "ticker": "RQI",
+  "sector": "VNQ",
+  "name": "Cohen & Steers Quality Income Realty"
+ },
+ {
+  "ticker": "RNP",
+  "sector": "VNQ",
+  "name": "Cohen & Steers REIT & Preferred Income"
+ },
+ {
+  "ticker": "RFI",
+  "sector": "VNQ",
+  "name": "Cohen & Steers Total Return Realty"
+ },
+ {
+  "ticker": "JRS",
+  "sector": "VNQ",
+  "name": "Nuveen Real Estate Income"
+ },
+ {
+  "ticker": "JRI",
+  "sector": "VNQ",
+  "name": "Nuveen Real Asset Income & Growth"
+ },
+ {
+  "ticker": "AWP",
+  "sector": "VNQ",
+  "name": "abrdn Global Premier Properties"
+ },
+ {
+  "ticker": "THW",
+  "sector": "XLV",
+  "name": "abrdn World Healthcare Fund"
+ },
+ {
+  "ticker": "THQ",
+  "sector": "XLV",
+  "name": "abrdn Healthcare Opportunities"
+ },
+ {
+  "ticker": "HQH",
+  "sector": "IBB",
+  "name": "abrdn Healthcare Investors"
+ },
+ {
+  "ticker": "HQL",
+  "sector": "IBB",
+  "name": "abrdn Life Sciences Investors"
+ },
+ {
+  "ticker": "BMEZ",
+  "sector": "IBB",
+  "name": "BlackRock Health Sciences Term Trust"
+ },
+ {
+  "ticker": "BME",
+  "sector": "XLV",
+  "name": "BlackRock Health Sciences Trust"
+ },
+ {
+  "ticker": "PDX",
+  "sector": "XLE",
+  "name": "PIMCO Dynamic Income Strategy Fund"
+ },
+ {
+  "ticker": "GNT",
+  "sector": "GLD",
+  "name": "GAMCO Natural Resources, Gold & Income"
+ },
+ {
+  "ticker": "GGN",
+  "sector": "GLD",
+  "name": "GAMCO Global Gold Natural Resources & Income"
+ },
+ {
+  "ticker": "BCV",
+  "sector": "QQQ",
+  "name": "Bancroft Fund"
+ },
+ {
+  "ticker": "TY",
+  "sector": "QQQ",
+  "name": "Tri-Continental"
+ },
+ {
+  "ticker": "STK",
+  "sector": "SMH",
+  "name": "Columbia Seligman Premium Technology Growth"
+ },
+ {
+  "ticker": "ETO",
+  "sector": "QQQ",
+  "name": "Eaton Vance Tax-Advantaged Global Div Opp"
+ },
+ {
+  "ticker": "LGI",
+  "sector": "QQQ",
+  "name": "Lazard Global Total Return and Income"
+ },
+ {
+  "ticker": "BST",
+  "sector": "SMH",
+  "name": "BlackRock Science and Technology Trust"
+ },
+ {
+  "ticker": "BSTZ",
+  "sector": "SMH",
+  "name": "BlackRock Science and Technology Term Trust"
+ },
+ {
+  "ticker": "GDV",
+  "sector": "SPY",
+  "name": "Gabelli Dividend & Income"
+ },
+ {
+  "ticker": "NIE",
+  "sector": "QQQ",
+  "name": "Virtus Equity & Convertible Income Fund"
+ },
+ {
+  "ticker": "CCD",
+  "sector": "QQQ",
+  "name": "Calamos Dynamic Convertible and Income"
+ },
+ {
+  "ticker": "AIO",
+  "sector": "QQQ",
+  "name": "Virtus AI & Tech Opportunities Fund"
+ },
+ {
+  "ticker": "RMT",
+  "sector": "SPY",
+  "name": "Royce Micro-Cap Trust"
+ },
+ {
+  "ticker": "RVT",
+  "sector": "SPY",
+  "name": "Royce Value Trust"
+ },
+ {
+  "ticker": "NCZ",
+  "sector": "QQQ",
+  "name": "Virtus Convertible & Income Fund II"
+ },
+ {
+  "ticker": "AVK",
+  "sector": "SPY",
+  "name": "Advent Convertible & Income Fund"
+ },
+ {
+  "ticker": "ECAT",
+  "sector": "QQQ",
+  "name": "BlackRock ESG Capital Allocation Term Trust"
+ },
+ {
+  "ticker": "NBXG",
+  "sector": "QQQ",
+  "name": "Neuberger Berman Next Gen Connectivity"
+ },
+ {
+  "ticker": "BCAT",
+  "sector": "QQQ",
+  "name": "BlackRock Capital Allocation Term Trust"
+ },
+ {
+  "ticker": "ETB",
+  "sector": "QQQ",
+  "name": "Eaton Vance Tax-Managed Buy-Write Income"
+ },
+ {
+  "ticker": "SPXX",
+  "sector": "SPY",
+  "name": "Nuveen S&P 500 Dynamic Overwrite"
+ },
+ {
+  "ticker": "JCE",
+  "sector": "SPY",
+  "name": "Nuveen Core Equity Alpha"
+ },
+ {
+  "ticker": "RIV",
+  "sector": "SPY",
+  "name": "RiverNorth Opportunities Fund"
+ },
+ {
+  "ticker": "ETG",
+  "sector": "QQQ",
+  "name": "Eaton Vance Tax-Advantaged Global Dividend Income"
+ },
+ {
+  "ticker": "AGD",
+  "sector": "QQQ",
+  "name": "abrdn Global Dynamic Dividend"
+ },
+ {
+  "ticker": "NFJ",
+  "sector": "SPY",
+  "name": "AllianzGI Div Interest & Prem Common"
+ },
+ {
+  "ticker": "BTX",
+  "sector": "SMH",
+  "name": "BlackRock Technology and Private Equity Term"
+ },
+ {
+  "ticker": "ETY",
+  "sector": "QQQ",
+  "name": "Eaton Vance Tax-Managed Diversified Equity Income"
+ },
+ {
+  "ticker": "CHI",
+  "sector": "QQQ",
+  "name": "Calamos Convertible Opportunities & Income"
+ },
+ {
+  "ticker": "GLQ",
+  "sector": "SPY",
+  "name": "Clough Global Equity"
+ },
+ {
+  "ticker": "ETV",
+  "sector": "QQQ",
+  "name": "Eaton Vance Tax-Managed Buy-Write Opportunities"
+ },
+ {
+  "ticker": "ETW",
+  "sector": "QQQ",
+  "name": "Eaton Vance Tax-Managed Global Buy-Write Opportunities"
+ },
+ {
+  "ticker": "ETJ",
+  "sector": "QQQ",
+  "name": "Eaton Vance Risk-Managed Diversified Equity Income"
+ },
+ {
+  "ticker": "ADX",
+  "sector": "QQQ",
+  "name": "Adams Diversified Equity Fund"
+ },
+ {
+  "ticker": "ASG",
+  "sector": "QQQ",
+  "name": "Liberty All-Star Growth"
+ },
+ {
+  "ticker": "AOD",
+  "sector": "QQQ",
+  "name": "abrdn Total Dynamic Dividend"
+ },
+ {
+  "ticker": "EOI",
+  "sector": "QQQ",
+  "name": "Eaton Vance Enhanced Equity Income"
+ },
+ {
+  "ticker": "FT",
+  "sector": "XLU",
+  "name": "Franklin Universal Trust"
+ },
+ {
+  "ticker": "CHW",
+  "sector": "SMH",
+  "name": "Calamos Global Dynamic Income"
+ },
+ {
+  "ticker": "GAB",
+  "sector": "SPY",
+  "name": "Gabelli Equity Trust"
+ },
+ {
+  "ticker": "EOS",
+  "sector": "QQQ",
+  "name": "Eaton Vance Enhanced Equity Income II"
+ },
+ {
+  "ticker": "EXG",
+  "sector": "QQQ",
+  "name": "Eaton Vance Tax-Managed Global Diversified Equity Income"
+ },
+ {
+  "ticker": "CSQ",
+  "sector": "QQQ",
+  "name": "Calamos Strategic Total Return"
+ },
+ {
+  "ticker": "CPZ",
+  "sector": "SPY",
+  "name": "Calamos Long/Short Equity & Dynamic Income"
+ },
+ {
+  "ticker": "NMAI",
+  "sector": "SPY",
+  "name": "Nuveen Multi-Asset Income"
+ },
+ {
+  "ticker": "BOE",
+  "sector": "QQQ",
+  "name": "BlackRock Enhanced Global Dividend Trust"
+ },
+ {
+  "ticker": "CLM",
+  "sector": "QQQ",
+  "name": "Cornerstone Strategic Investment Fund"
+ },
+ {
+  "ticker": "CRF",
+  "sector": "QQQ",
+  "name": "Cornerstone Total Return Fund"
+ },
+ {
+  "ticker": "CHY",
+  "sector": "QQQ",
+  "name": "Calamos Convertible & High Income"
+ },
+ {
+  "ticker": "FFA",
+  "sector": "SPY",
+  "name": "First Trust Enhanced Equity Income"
+ },
+ {
+  "ticker": "ACV",
+  "sector": "QQQ",
+  "name": "Virtus Diversified Income & Convertible"
+ },
+ {
+  "ticker": "QQQX",
+  "sector": "QQQ",
+  "name": "Nuveen Nasdaq 100 Dynamic Overwrite"
+ },
+ {
+  "ticker": "BTO",
+  "sector": "SPY",
+  "name": "John Hancock Financial Opportunities"
+ },
+ {
+  "ticker": "SCD",
+  "sector": "SPY",
+  "name": "ClearBridge Capital and Income (LMP)"
+ },
+ {
+  "ticker": "CII",
+  "sector": "QQQ",
+  "name": "BlackRock Enhanced Large Cap Core Fund"
+ },
+ {
+  "ticker": "NCV",
+  "sector": "QQQ",
+  "name": "Virtus Convertible & Income Fund"
+ },
+ {
+  "ticker": "CGO",
+  "sector": "SMH",
+  "name": "Calamos Global Total Return"
+ },
+ {
+  "ticker": "STEW",
+  "sector": "SPY",
+  "name": "SRH Total Return Fund"
+ }
+]

@@ -1,0 +1,35 @@
+name: Data - Holdings (SEC N-PORT)
+# Full holdings of every CEF from SEC N-PORT filings -> branch data-holdings-sec (holdings-sec.json.gz,
+# holdings-sec-index.json, figi-cache.json). Daily: only funds with a NEW filing are downloaded again.
+# Needs repository secret SEC_USER_AGENT (SEC rule: name + email). Optional secret OPENFIGI_API_KEY (faster first run).
+on:
+  schedule:
+    - cron: "30 12 * * 1-5"    # weekdays 8:30 AM New York — catches yesterday's N-PORT filings
+  workflow_dispatch: {}
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r jobs/requirements.txt
+      - name: Get the previous data (incl. the OpenFIGI cache)
+        run: |
+          mkdir -p out
+          if git fetch -q --depth=1 origin data-holdings-sec; then git --work-tree=out checkout FETCH_HEAD -- . ; else echo "first run"; fi
+      - name: Build
+        run: python jobs/holdings_sec.py --out out --cefs jobs/data/cefs.json --prefs jobs/data/prefs.json
+        env:
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+          OPENFIGI_API_KEY: ${{ secrets.OPENFIGI_API_KEY }}
+      - name: Check the result before publishing
+        run: python -c "import gzip,json; d=json.loads(gzip.decompress(open('out/holdings-sec.json.gz','rb').read())); n=len(d['funds']); print(n,'funds'); assert n>=300, 'too few funds - not publishing'"
+      - name: Publish to the data-holdings-sec branch
+        run: bash scripts/publish-data.sh out data-holdings-sec
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
