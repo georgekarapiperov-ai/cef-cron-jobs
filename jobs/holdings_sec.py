@@ -237,7 +237,8 @@ class Figi:
         todo = [w for w in wanted if self.job_key(*w) not in self.cache]
         for i in range(0, len(todo), self.batch):
             chunk = todo[i:i + self.batch]
-            res = await self._post([{"idType": k, "idValue": v} for k, v in chunk])
+            res = await self._post([{"idType": k[4:], "idValue": v, "exchCode": "US"} if k.startswith("USX:")
+                                    else {"idType": k, "idValue": v} for k, v in chunk])
             for (k, v), r in zip(chunk, res):
                 listings = [{"t": d.get("ticker"), "ex": norm_exch(d.get("exchCode")), "type": d.get("securityType"),
                              "type2": d.get("securityType2"), "sector": d.get("marketSector"), "name": d.get("name")}
@@ -258,29 +259,40 @@ class Figi:
         listings = self.cache.get(self.job_key(kind, value)) or []
         if any(l["ex"] == "US" for l in listings):
             return None
-        base = next((l for l in listings if l["t"] and re.fullmatch(r"[A-Z]{1,5}", l["t"])), None)
-        return (base["t"], base["name"]) if base else None
+        plain = sorted({l["t"] for l in listings if l["t"] and re.fullmatch(r"[A-Z]{1,5}", l["t"])}, key=len)
+        name = next((l["name"] for l in listings if l.get("name")), None)
+        return [(t, name) for t in plain[:3]] or None
 
     async def resolve_us_fallback(self, wanted):
         """Second pass for US codes without a US listing: look the plain ticker up on US exchanges; same company name only."""
         todo = {}
         for k, v in wanted:
+            if k.startswith("USX:"):
+                continue
             if k in ("ID_CUSIP", "ID_CINS") or (k == "ID_ISIN" and v.startswith("US")):
-                cand = self._us_candidate(k, v)
-                if cand and f"US:{cand[0]}" not in self.cache:
-                    todo[cand[0]] = cand[1]
+                for t, name in self._us_candidate(k, v) or []:
+                    if f"US:{t}" not in self.cache:
+                        todo[t] = name
         items = list(todo.items())
         for i in range(0, len(items), self.batch):
             chunk = items[i:i + self.batch]
             res = await self._post([{"idType": "TICKER", "idValue": t, "exchCode": "US"} for t, _ in chunk])
             for (t, name), r in zip(chunk, res):
-                hit = next((d for d in (r.get("data") or []) if (d.get("name") or "").upper() == (name or "").upper()), None)
+                hit = next((d for d in (r.get("data") or []) if same_company(d.get("name"), name)), None)
                 self.cache[f"US:{t}"] = hit["ticker"] if hit else ""
         self.save()
         return len(items)
 
     def save(self):
         self.path.write_text(json.dumps(self.cache, separators=(",", ":")), encoding="utf-8")
+
+    def us_ticker(self, kind, value):
+        """The US listing from a US-filtered lookup (None if the security has no US line)."""
+        for l in self.cache.get(self.job_key("USX:" + kind, value)) or []:
+            t = l["t"] or ""
+            if l["ex"] == "US" and t and not (len(t) == 5 and t.endswith("F")):   # WMMVF = OTC copy, not a listing
+                return yahoo_ticker(t, "US")
+        return None
 
     def ticker(self, kind, value, country):
         """Best Yahoo ticker for a code, preferring the home-country listing."""
@@ -295,13 +307,22 @@ class Figi:
                 break
         if not pick:
             pick = next((l for l in listings if l["ex"] in YAHOO_SUFFIX and l["t"]), None)
+        if not pick or (country or "US") == "US" and pick["ex"] != "US":
+            for t, _ in (self._us_candidate(kind, value) or []) if (country or "US") == "US" else []:
+                us = self.cache.get(f"US:{t}")
+                if us:
+                    return yahoo_ticker(us, "US"), {"t": us, "ex": "US", "via": "ticker fallback"}
         if not pick:
-            cand = self._us_candidate(kind, value) if (country or "US") == "US" else None
-            us = self.cache.get(f"US:{cand[0]}") if cand else None
-            if us:
-                return yahoo_ticker(us, "US"), {"t": us, "ex": "US", "via": "base-ticker fallback"}
             return None, listings[0]
         return yahoo_ticker(pick["t"], pick["ex"]), pick
+
+
+def same_company(a, b):
+    """'EXXON MOBIL CORP' == 'EXXONMOBIL HOLDINGS CORP' (Exxon's 2026 holding-company reorganisation)."""
+    drop = r"\b(corp|corporation|inc|incorporated|holdings?|co|company|ltd|limited|plc|the|group|com|new)\b"
+    norm = lambda s: re.sub(r"[^a-z]", "", re.sub(drop, "", (s or "").lower()))  # noqa: E731
+    x, y = norm(a), norm(b)
+    return bool(x and y) and (x == y or (min(len(x), len(y)) >= 5 and (x.startswith(y) or y.startswith(x))))
 
 
 def cusip_kind(c):
@@ -332,7 +353,9 @@ def yahoo_ticker(t, ex):
         return None
     if " " in t:                       # e.g. "SO 4.2 PRA" — not a plain listing we can price
         return None
-    t = t.rstrip("/").replace("/", "-")
+    t = t.rstrip("/").rstrip("*").replace("/", "-")
+    if suf == "" and re.fullmatch(r"[A-Z]+\.[A-Z]", t):
+        t = t.replace(".", "-")                       # BRK.B -> BRK-B
     if suf == ".HK" and t.isdigit():
         t = t.zfill(4)
     if suf in (".L",) and t.endswith("."):
@@ -464,18 +487,23 @@ def finish_fund(rec, figi, pref_cusips):
         if h.get("cusip") and h["cusip"].upper() in pref_cusips and cls not in ("derivative", "cash"):
             t, proxy = pref_cusips[h["cusip"].upper()], None      # a preferred / baby bond from George's list
         elif cls in ("equity", "preferred", "fund"):
-            if h.get("ctry") == "US" and h.get("tkr"):        # filing already gives the ticker
-                t = yahoo_ticker(h["tkr"], "US")
-            if not t:
-                if h.get("cusip") and (h.get("ctry") in (None, "US")):
-                    t, _ = figi.ticker(cusip_kind(h["cusip"]), h["cusip"], "US")
-                if not t and h.get("isin"):
-                    t, _ = figi.ticker("ID_ISIN", h["isin"], h.get("ctry"))
-                if not t and h.get("cusip"):
-                    t, _ = figi.ticker(cusip_kind(h["cusip"]), h["cusip"], h.get("ctry"))
+            if h.get("cusip") and (h.get("ctry") in (None, "US") or cusip_kind(h["cusip"]) == "ID_CINS"):
+                t = figi.us_ticker(cusip_kind(h["cusip"]), h["cusip"])    # Chubb CINS -> CB (not Zurich AEX)
+            if not t and h.get("cusip") and (h.get("ctry") in (None, "US")):
+                t, _ = figi.ticker(cusip_kind(h["cusip"]), h["cusip"], "US")
+            if not t and h.get("isin") and not h.get("cusip"):
+                t = figi.us_ticker("ID_ISIN", h["isin"])
+            if not t and h.get("isin"):
+                t, _ = figi.ticker("ID_ISIN", h["isin"], h.get("ctry"))
+            if not t and h.get("cusip"):
+                t, _ = figi.ticker(cusip_kind(h["cusip"]), h["cusip"], h.get("ctry"))
+            if not t and cls == "equity" and h.get("ctry") == "US" and h.get("tkr"):
+                t = yahoo_ticker(h["tkr"], "US")             # filing's own ticker: last resort (BNY's still says BK)
         elif cls == "convertible":
             c = h["conv"]
             if c.get("cusip"):
+                t = figi.us_ticker(cusip_kind(c["cusip"]), c["cusip"])
+            if not t and c.get("cusip"):
                 t, _ = figi.ticker(cusip_kind(c["cusip"]), c["cusip"], "US")
             if not t and c.get("isin"):
                 t, _ = figi.ticker("ID_ISIN", c["isin"], c["isin"][:2])
@@ -524,16 +552,21 @@ def figi_wanted(rec, pref_cusips):
         if h.get("cusip") and h["cusip"].upper() in pref_cusips:
             continue
         cls, _ = classify(h)
-        if cls in ("equity", "preferred", "fund") and not (h.get("ctry") == "US" and h.get("tkr")):
+        if cls in ("equity", "preferred", "fund"):
+            if h.get("cusip") and (h.get("ctry") in (None, "US") or cusip_kind(h["cusip"]) == "ID_CINS"):
+                want.add(("USX:" + cusip_kind(h["cusip"]), h["cusip"]))
             if h.get("cusip") and h.get("ctry") in (None, "US"):
                 want.add((cusip_kind(h["cusip"]), h["cusip"]))
             elif h.get("isin"):
                 want.add(("ID_ISIN", h["isin"]))
+                if not h.get("cusip"):
+                    want.add(("USX:ID_ISIN", h["isin"]))
             elif h.get("cusip"):
                 want.add((cusip_kind(h["cusip"]), h["cusip"]))
         elif cls == "convertible":
             c = h["conv"]
             if c.get("cusip"):
+                want.add(("USX:" + cusip_kind(c["cusip"]), c["cusip"]))
                 want.add((cusip_kind(c["cusip"]), c["cusip"]))
             elif c.get("isin"):
                 want.add(("ID_ISIN", c["isin"]))

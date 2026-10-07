@@ -31,7 +31,7 @@
  },
  {
   "ticker": "FSCO",
-  "sector": "BKLN",
+  "sector": "AGG",
   "name": "FS Credit Opportunities Corp"
  },
  {
@@ -51,12 +51,12 @@
  },
  {
   "ticker": "NDMO",
-  "sector": "AGG",
-  "name": "Nuveen Diversified Multi-Asset Income"
+  "sector": "MUB",
+  "name": "Nuveen Dynamic Municipal Opportunities Fund"
  },
  {
   "ticker": "PPT",
-  "sector": "BKLN",
+  "sector": "AGG",
   "name": "Putnam Premier Income Trust"
  },
  {
@@ -67,7 +67,7 @@
  {
   "ticker": "VGM",
   "sector": "MUB",
-  "name": "Invesco Trust for Value Municipal Income"
+  "name": "Invesco Trust for Investment Grade Municipals"
  },
  {
   "ticker": "MMT",
@@ -76,13 +76,13 @@
  },
  {
   "ticker": "GOF",
-  "sector": "HYG",
+  "sector": "AGG",
   "name": "Guggenheim Strategic Opportunities"
  },
  {
   "ticker": "BPRE",
-  "sector": "AGG",
-  "name": "Barings Private Credit Corp"
+  "sector": "VNQ",
+  "name": "Bluerock Private Real Estate Fund"
  },
  {
   "ticker": "BTT",
@@ -91,7 +91,7 @@
  },
  {
   "ticker": "RLTY",
-  "sector": "AGG",
+  "sector": "VNQ",
   "name": "Cohen & Steers Real Estate Opportunities & Income"
  },
  {
@@ -101,8 +101,8 @@
  },
  {
   "ticker": "NMCO",
-  "sector": "AGG",
-  "name": "Nuveen Mortgage Opportunity Term Fund"
+  "sector": "MUB",
+  "name": "Nuveen Municipal Credit Opportunities Fund"
  },
  {
   "ticker": "PML",
@@ -111,8 +111,8 @@
  },
  {
   "ticker": "FPF",
-  "sector": "AGG",
-  "name": "First Trust Intermediate Duration Preferred"
+  "sector": "PFF",
+  "name": "First Trust Intermediate Duration Preferred & Income Fund"
  },
  {
   "ticker": "JPC",
@@ -131,23 +131,23 @@
  },
  {
   "ticker": "IGD",
-  "sector": "AGG",
-  "name": "Voya Global Diversified Payment"
+  "sector": "SPY",
+  "name": "Voya Global Equity Dividend & Premium Opportunity Fund"
  },
  {
   "ticker": "NPFD",
-  "sector": "MUB",
+  "sector": "PFF",
   "name": "Nuveen Variable Rate Preferred & Income"
  },
  {
   "ticker": "ERC",
   "sector": "AGG",
-  "name": "Wells Fargo Multi-Sector Income Fund"
+  "name": "Allspring Multi-sector Income Fund"
  },
  {
   "ticker": "CIK",
   "sector": "HYG",
-  "name": "Credit Suisse Asset Mgmt Income Fund"
+  "name": "UBS Asset Management Income"
  },
  {
   "ticker": "NEA",
@@ -157,7 +157,7 @@
  {
   "ticker": "DHY",
   "sector": "HYG",
-  "name": "Credit Suisse High Yield Bond Fund"
+  "name": "UBS Asset Management High Yield Credit"
  },
  {
   "ticker": "VKI",
@@ -171,13 +171,13 @@
  },
  {
   "ticker": "DSU",
-  "sector": "AGG",
+  "sector": "BKLN",
   "name": "BlackRock Debt Strategies Fund"
  },
  {
   "ticker": "HGLB",
-  "sector": "AGG",
-  "name": "BrightSpire? / Highland Global Allocation"
+  "sector": "SPY",
+  "name": "Highland Global Allocation Fund"
  },
  {
   "ticker": "CEF",
@@ -197,7 +197,7 @@
  {
   "ticker": "MUC",
   "sector": "MUB",
-  "name": "BlackRock MuniHoldings California"
+  "name": "BlackRock MuniHoldings California Quality Fund"
  },
  {
   "ticker": "VGI",
@@ -211,12 +211,12 @@
  },
  {
   "ticker": "PCQ",
-  "sector": "AGG",
+  "sector": "MUB",
   "name": "PIMCO California Municipal Income II"
  },
  {
   "ticker": "BDJ",
-  "sector": "AGG",
+  "sector": "SPY",
   "name": "BlackRock Enhanced Equity Dividend Trust"
  },
  {
@@ -231,17 +231,17 @@
  },
  {
   "ticker": "EARN",
-  "sector": "AGG",
-  "name": "Ellington Residential Mortgage REIT"
+  "sector": "BKLN",
+  "name": "Ellington Credit Co"
  },
  {
   "ticker": "FFC",
   "sector": "PFF",
-  "name": "Flaherty & Crumrine Preferred Securities Income"
+  "name": "Flah&Crum Preferred Securities"
  },
  {
   "ticker": "IGA",
-  "sector": "PFF",
+  "sector": "SPY",
   "name": "Voya Global Advantage & Premium Opportunity"
  },
  {
@@ -251,12 +251,12 @@
  },
  {
   "ticker": "BBN",
-  "sector": "AGG",
+  "sector": "MUB",
   "name": "BlackRock Taxable Municipal Bond Trust"
  },
  {
   "ticker": "WIW",
-  "sector": "HYG",
+  "sector": "AGG",
   "name": "Western Asset Inflation-Linked Opportunities"
  },
  {
@@ -271,22 +271,22 @@
  },
  {
   "ticker": "OIA",
-  "sector": "AGG",
+  "sector": "MUB",
   "name": "Invesco Municipal Income Opportunities Trust"
  },
  {
   "ticker": "BGB",
-  "sector": "AGG",
+  "sector": "BKLN",
   "name": "Blackstone Strategic Credit 2027"
  },
  {
   "ticker": "KIO",
-  "sector": "AGG",
+  "sector": "HYG",
   "name": "KKR Income Opportunities Fund"
  },
  {
   "ticker": "IDE",
-  "sector": "AGG",
+  "sector": "XLU",
   "name": "Voya Infrastructure, Industrials & Materials"
  },
  {
@@ -306,7 +306,7 @@
  },
  {
   "ticker": "GGT",
-  "sector": "HYG",
+  "sector": "SPY",
   "name": "Gabelli Multimedia Trust"
  },
  {
@@ -332,11 +332,11 @@
  {
   "ticker": "PDT",
   "sector": "PFF",
-  "name": "John Hancock Premium Dividend Fund"
+  "name": "JHancock Premium Dividend Fund"
  },
  {
   "ticker": "GLO",
-  "sector": "AGG",
+  "sector": "SPY",
   "name": "Clough Global Opportunities Fund"
  },
  {
@@ -366,7 +366,7 @@
  },
  {
   "ticker": "IQI",
-  "sector": "AGG",
+  "sector": "MUB",
   "name": "Invesco Quality Municipal Income Trust"
  },
  {
@@ -381,28 +381,28 @@
  },
  {
   "ticker": "ZTR",
-  "sector": "AGG",
+  "sector": "SPY",
   "name": "Virtus Total Return Fund"
  },
  {
   "ticker": "OPP",
-  "sector": "AGG",
+  "sector": "HYG",
   "name": "RiverNorth/DoubleLine Strategic Opportunity"
  },
  {
   "ticker": "MUJ",
   "sector": "MUB",
-  "name": "BlackRock New Jersey Municipal Bond Trust"
+  "name": "BlackRock MuniHoldings New Jersey Quality Fund"
  },
  {
   "ticker": "CCIF",
-  "sector": "AGG",
-  "name": "CION Ares Diversified Credit Fund"
+  "sector": "BKLN",
+  "name": "Carlyle Credit Income Fund"
  },
  {
   "ticker": "BGY",
-  "sector": "AGG",
-  "name": "BlackRock International Growth & Income"
+  "sector": "SPY",
+  "name": "BlackRock Enhanced International Dividend Trust"
  },
  {
   "ticker": "MHD",
@@ -417,7 +417,7 @@
  {
   "ticker": "DFP",
   "sector": "PFF",
-  "name": "Flaherty & Crumrine Dynamic Preferred & Income"
+  "name": "Flah & Crum Dynamic Pref & Income Fund"
  },
  {
   "ticker": "FSSL",
@@ -431,17 +431,17 @@
  },
  {
   "ticker": "LDP",
-  "sector": "CWB",
+  "sector": "PFF",
   "name": "Cohen & Steers Ltd Duration Preferred & Income II"
  },
  {
   "ticker": "PTA",
-  "sector": "AGG",
-  "name": "Pimco Tax Advantaged Municipal? (Prudential N/A)"
+  "sector": "PFF",
+  "name": "Cohen & Steers Tax-Advantaged Preferred Securities & Income Fund"
  },
  {
   "ticker": "FTHY",
-  "sector": "AGG",
+  "sector": "HYG",
   "name": "First Trust High Yield Opportunities 2027"
  },
  {
@@ -456,13 +456,13 @@
  },
  {
   "ticker": "NHS",
-  "sector": "AGG",
+  "sector": "HYG",
   "name": "Neuberger Berman High Yield Strategies"
  },
  {
   "ticker": "EOD",
-  "sector": "AGG",
-  "name": "Wells Fargo Global Dividend Opportunity"
+  "sector": "SPY",
+  "name": "Allspring Global Dividend Opportunity Fund"
  },
  {
   "ticker": "MUA",
@@ -472,7 +472,7 @@
  {
   "ticker": "HPS",
   "sector": "PFF",
-  "name": "John Hancock Preferred Income Fund II"
+  "name": "JHancock Preferred Income III"
  },
  {
   "ticker": "EFT",
@@ -487,16 +487,16 @@
  {
   "ticker": "IFN",
   "sector": "INDA",
-  "name": "The India Fund"
+  "name": "Aberdeen India Fund"
  },
  {
   "ticker": "DXYZ",
-  "sector": "AGG",
+  "sector": "QQQ",
   "name": "Destiny Tech100"
  },
  {
   "ticker": "MQY",
-  "sector": "AGG",
+  "sector": "MUB",
   "name": "BlackRock MuniYield Quality Fund"
  },
  {
@@ -511,12 +511,12 @@
  },
  {
   "ticker": "HFRO",
-  "sector": "HYG",
+  "sector": "BKLN",
   "name": "Highland Income Fund"
  },
  {
   "ticker": "JLS",
-  "sector": "AGG",
+  "sector": "HYG",
   "name": "Nuveen Mortgage & Income Fund"
  },
  {
@@ -526,7 +526,7 @@
  },
  {
   "ticker": "NRK",
-  "sector": "AGG",
+  "sector": "MUB",
   "name": "Nuveen New York AMT-Free Municipal Income"
  },
  {
@@ -541,7 +541,7 @@
  },
  {
   "ticker": "RA",
-  "sector": "AGG",
+  "sector": "HYG",
   "name": "Brookfield Real Assets Income Fund"
  },
  {
@@ -561,7 +561,7 @@
  },
  {
   "ticker": "SPE",
-  "sector": "AGG",
+  "sector": "SPY",
   "name": "Special Opportunities Fund"
  },
  {
@@ -576,7 +576,7 @@
  },
  {
   "ticker": "HTD",
-  "sector": "AGG",
+  "sector": "SPY",
   "name": "John Hancock Tax-Advantaged Dividend Income"
  },
  {
@@ -592,7 +592,7 @@
  {
   "ticker": "NAN",
   "sector": "MUB",
-  "name": "Nuveen New York AMT-Free Municipal Income"
+  "name": "Nuveen New York Quality Municipal Income Fund"
  },
  {
   "ticker": "PFD",
@@ -611,7 +611,7 @@
  },
  {
   "ticker": "EHI",
-  "sector": "AGG",
+  "sector": "HYG",
   "name": "Western Asset Global High Income Fund"
  },
  {
@@ -626,7 +626,7 @@
  },
  {
   "ticker": "ECF",
-  "sector": "AGG",
+  "sector": "CWB",
   "name": "Ellsworth Growth and Income Fund"
  },
  {
@@ -646,7 +646,7 @@
  },
  {
   "ticker": "EIC",
-  "sector": "BKLN",
+  "sector": "HYG",
   "name": "Eagle Point Institutional Income Fund"
  },
  {
@@ -677,7 +677,7 @@
  {
   "ticker": "FLC",
   "sector": "PFF",
-  "name": "Flaherty & Crumrine Total Return Fund"
+  "name": "Flah&Crum Total Return Fund"
  },
  {
   "ticker": "EVG",
@@ -686,18 +686,18 @@
  },
  {
   "ticker": "RSF",
-  "sector": "AGG",
-  "name": "RiverNorth Specialty Finance Corp"
+  "sector": "HYG",
+  "name": "RiverNorth Capital and Income Fund"
  },
  {
   "ticker": "AEF",
   "sector": "EEM",
-  "name": "abrdn Emerging Markets Equity Income Fund"
+  "name": "abrdn Emerging Markets ex-China Fund"
  },
  {
   "ticker": "IAE",
-  "sector": "AGG",
-  "name": "Voya Emerging Markets High Dividend Equity"
+  "sector": "EEM",
+  "name": "Voya Asia Pacific High Dividend Equity Income Fund"
  },
  {
   "ticker": "WDI",
@@ -706,8 +706,8 @@
  },
  {
   "ticker": "GUG",
-  "sector": "AGG",
-  "name": "Guggenheim Credit Income Fund"
+  "sector": "SPY",
+  "name": "Guggenheim Active Allocation Fund"
  },
  {
   "ticker": "ISD",
@@ -721,13 +721,13 @@
  },
  {
   "ticker": "VLT",
-  "sector": "AGG",
-  "name": "Invesco Value Municipal Income Trust II"
+  "sector": "HYG",
+  "name": "Invesco High Income Trust II"
  },
  {
   "ticker": "NPCT",
   "sector": "AGG",
-  "name": "Nuveen Preferred & Convertible Income Term Fund"
+  "name": "Nuveen Core Plus Impact Fund"
  },
  {
   "ticker": "RVI",
@@ -751,7 +751,7 @@
  },
  {
   "ticker": "PSF",
-  "sector": "BKLN",
+  "sector": "PFF",
   "name": "Cohen & Steers Select Preferred and Income Fund"
  },
  {
@@ -766,7 +766,7 @@
  },
  {
   "ticker": "PGP",
-  "sector": "AGG",
+  "sector": "SPY",
   "name": "PIMCO Global StocksPLUS & Income Fund"
  },
  {
@@ -782,7 +782,7 @@
  {
   "ticker": "MYI",
   "sector": "MUB",
-  "name": "BlackRock Muni Intermediate Duration Fund"
+  "name": "BlackRock MuniYield Quality Fund III"
  },
  {
   "ticker": "DMB",
@@ -791,12 +791,12 @@
  },
  {
   "ticker": "GUT",
-  "sector": "AGG",
+  "sector": "XLU",
   "name": "Gabelli Utility Trust"
  },
  {
   "ticker": "DHF",
-  "sector": "AGG",
+  "sector": "HYG",
   "name": "BNY Mellon High Yield Strategies Fund"
  },
  {
@@ -806,23 +806,23 @@
  },
  {
   "ticker": "GDL",
-  "sector": "AGG",
-  "name": "GDL Fund (General American Investors)"
+  "sector": "SPY",
+  "name": "GDL Fund"
  },
  {
   "ticker": "NXP",
-  "sector": "AGG",
+  "sector": "MUB",
   "name": "Nuveen Select Tax-Free Income Portfolio"
  },
  {
   "ticker": "CET",
-  "sector": "AGG",
+  "sector": "SPY",
   "name": "Central Securities Corporation"
  },
  {
   "ticker": "HPI",
   "sector": "PFF",
-  "name": "John Hancock Preferred Income Fund III"
+  "name": "JHancock Preferred Income"
  },
  {
   "ticker": "TPZ",
@@ -846,8 +846,8 @@
  },
  {
   "ticker": "DMA",
-  "sector": "AGG",
-  "name": "BNY Mellon Alcentra Multi-Strategy Credit"
+  "sector": "SPY",
+  "name": "Destra Multi-Alternative Fund"
  },
  {
   "ticker": "HIO",
@@ -871,7 +871,7 @@
  },
  {
   "ticker": "IGR",
-  "sector": "AGG",
+  "sector": "VNQ",
   "name": "CBRE Global Real Estate Income Fund"
  },
  {
@@ -886,12 +886,12 @@
  },
  {
   "ticker": "FINS",
-  "sector": "AGG",
-  "name": "Financial Investors Trust / N/A"
+  "sector": "SPY",
+  "name": "Angel Oak Financial Strategies Income Term Trust"
  },
  {
   "ticker": "BRW",
-  "sector": "AGG",
+  "sector": "BKLN",
   "name": "Saba Capital Income & Growth Fund II"
  },
  {
@@ -907,22 +907,22 @@
  {
   "ticker": "NAZ",
   "sector": "MUB",
-  "name": "Nuveen Arizona Premium Income Municipal Fund"
+  "name": "Nuveen Arizona Quality Municipal Income Fund"
  },
  {
   "ticker": "DMO",
-  "sector": "AGG",
-  "name": "Western Asset Mortgage Defined Opportunity"
+  "sector": "HYG",
+  "name": "Western Asset Mortgage Opportunity Fund"
  },
  {
   "ticker": "GBAB",
   "sector": "MUB",
-  "name": "Guggenheim Taxable Municipal Bond & Investment Grade"
+  "name": "Guggenheim Taxable Municipal Bond & Investment Grade Debt Trust"
  },
  {
   "ticker": "GDO",
   "sector": "AGG",
-  "name": "Western Asset Global Corporate Defined Opportunity"
+  "name": "Western Asset Global Corporate Opportunity Fund"
  },
  {
   "ticker": "BWG",
@@ -936,8 +936,8 @@
  },
  {
   "ticker": "WIA",
-  "sector": "HYG",
-  "name": "Western Asset Managed Municipals Fund"
+  "sector": "AGG",
+  "name": "Western Asset Inflation-Linked Income Fund"
  },
  {
   "ticker": "TWN",
@@ -946,7 +946,7 @@
  },
  {
   "ticker": "ECC",
-  "sector": "AGG",
+  "sector": "BKLN",
   "name": "Eagle Point Credit Company"
  },
  {
@@ -956,17 +956,17 @@
  },
  {
   "ticker": "MXF",
-  "sector": "EWW",
+  "sector": "EEM",
   "name": "Mexico Fund"
  },
  {
   "ticker": "GCV",
-  "sector": "AGG",
+  "sector": "SPY",
   "name": "Gabelli Convertible and Income Securities"
  },
  {
   "ticker": "RGT",
-  "sector": "AGG",
+  "sector": "SPY",
   "name": "Royce Global Value Trust"
  },
  {
@@ -977,36 +977,36 @@
  {
   "ticker": "HPF",
   "sector": "PFF",
-  "name": "John Hancock Preferred Income Fund"
+  "name": "JHancock Preferred Income II"
  },
  {
   "ticker": "GGZ",
-  "sector": "AGG",
+  "sector": "SPY",
   "name": "Gabelli Global Small & Mid Cap Value Trust"
  },
  {
   "ticker": "PCF",
-  "sector": "AGG",
+  "sector": "CWB",
   "name": "Putnam High Income Securities Fund"
  },
  {
   "ticker": "VTN",
   "sector": "MUB",
-  "name": "Invesco Trust for Investment Grade Municipals"
+  "name": "Invesco Trust for Investment Grade New York Municipals"
  },
  {
   "ticker": "NBH",
-  "sector": "AGG",
-  "name": "Neuberger Berman MLP and Energy Income"
+  "sector": "MUB",
+  "name": "Neuberger Municipal Fund"
  },
  {
   "ticker": "JHI",
   "sector": "AGG",
-  "name": "John Hancock Investors Trust"
+  "name": "JHancock Investors"
  },
  {
   "ticker": "NRO",
-  "sector": "AGG",
+  "sector": "VNQ",
   "name": "Neuberger Berman Real Estate Securities Income"
  },
  {
@@ -1016,7 +1016,7 @@
  },
  {
   "ticker": "DTF",
-  "sector": "AGG",
+  "sector": "MUB",
   "name": "DTF Tax-Free Income Fund"
  },
  {
@@ -1041,13 +1041,13 @@
  },
  {
   "ticker": "PGZ",
-  "sector": "AGG",
+  "sector": "VNQ",
   "name": "Principal Real Estate Income Fund"
  },
  {
   "ticker": "MIY",
   "sector": "MUB",
-  "name": "BlackRock New York Municipal Income Trust II"
+  "name": "BlackRock MuniYield Michigan Quality Fund"
  },
  {
   "ticker": "PFO",
@@ -1061,7 +1061,7 @@
  },
  {
   "ticker": "TBLD",
-  "sector": "AGG",
+  "sector": "SPY",
   "name": "Thornburg Income Builder Opportunities Trust"
  },
  {
@@ -1072,17 +1072,17 @@
  {
   "ticker": "JHS",
   "sector": "AGG",
-  "name": "John Hancock Income Securities Trust"
+  "name": "JHancock Income Secs"
  },
  {
   "ticker": "PAI",
   "sector": "AGG",
-  "name": "Western Asset Municipal Partners Fund"
+  "name": "Western Asset Investment Grade Income Fund"
  },
  {
   "ticker": "IGI",
-  "sector": "PFF",
-  "name": "Western Asset Investment Grade Income Fund"
+  "sector": "AGG",
+  "name": "Western Asset Investment Grade Opportunity Trust"
  },
  {
   "ticker": "ETX",
@@ -1091,22 +1091,22 @@
  },
  {
   "ticker": "FMN",
-  "sector": "AGG",
+  "sector": "MUB",
   "name": "Federated Hermes Premier Municipal Income"
  },
  {
   "ticker": "WEA",
   "sector": "AGG",
-  "name": "Western Asset High Income Fund"
+  "name": "Western Asset Premier Bond Fund"
  },
  {
   "ticker": "FMY",
   "sector": "AGG",
-  "name": "First Trust Municipal High Income"
+  "name": "First Trust Mortgage Income Fund"
  },
  {
   "ticker": "FOF",
-  "sector": "AGG",
+  "sector": "SPY",
   "name": "Cohen & Steers Closed-End Opportunity Fund"
  },
  {
@@ -1116,7 +1116,7 @@
  },
  {
   "ticker": "EEA",
-  "sector": "AGG",
+  "sector": "VGK",
   "name": "European Equity Fund"
  },
  {
@@ -1141,7 +1141,7 @@
  },
  {
   "ticker": "HEQ",
-  "sector": "AGG",
+  "sector": "SPY",
   "name": "John Hancock Hedged Equity & Income Fund"
  },
  {
@@ -1151,7 +1151,7 @@
  },
  {
   "ticker": "IAF",
-  "sector": "AGG",
+  "sector": "SPY",
   "name": "abrdn Australia Equity Fund"
  },
  {
@@ -1161,7 +1161,7 @@
  },
  {
   "ticker": "SOR",
-  "sector": "AGG",
+  "sector": "SPY",
   "name": "Source Capital Inc."
  },
  {
@@ -1171,7 +1171,7 @@
  },
  {
   "ticker": "CEV",
-  "sector": "AGG",
+  "sector": "MUB",
   "name": "Eaton Vance California Municipal Income Trust"
  },
  {
@@ -1186,7 +1186,7 @@
  },
  {
   "ticker": "NMT",
-  "sector": "AGG",
+  "sector": "MUB",
   "name": "Nuveen Municipal Income Fund"
  },
  {
@@ -1201,7 +1201,7 @@
  },
  {
   "ticker": "PNI",
-  "sector": "AGG",
+  "sector": "MUB",
   "name": "PIMCO New York Municipal Income Fund"
  },
  {
@@ -1226,13 +1226,13 @@
  },
  {
   "ticker": "BMN",
-  "sector": "AGG",
+  "sector": "MUB",
   "name": "BlackRock Municipal 2030 Target Term Trust"
  },
  {
   "ticker": "NUW",
   "sector": "MUB",
-  "name": "Nuveen Wisconsin Quality Municipal Income Fund"
+  "name": "Nuveen AMT-Free Municipal Value Fund"
  },
  {
   "ticker": "OCCI",
@@ -1241,12 +1241,12 @@
  },
  {
   "ticker": "PMM",
-  "sector": "AGG",
+  "sector": "MUB",
   "name": "Putnam Managed Municipal Income Trust"
  },
  {
   "ticker": "SDHY",
-  "sector": "AGG",
+  "sector": "HYG",
   "name": "PGIM Short Duration High Yield Opportunities"
  },
  {
@@ -1266,17 +1266,17 @@
  },
  {
   "ticker": "SBI",
-  "sector": "AGG",
+  "sector": "MUB",
   "name": "Western Asset Municipal Defined Opportunity Trust"
  },
  {
   "ticker": "BHV",
-  "sector": "AGG",
+  "sector": "MUB",
   "name": "BlackRock Virginia Municipal Bond Trust"
  },
  {
   "ticker": "CEE",
-  "sector": "VGK",
+  "sector": "EEM",
   "name": "Central and Eastern Europe Fund"
  },
  {
@@ -1291,17 +1291,17 @@
  },
  {
   "ticker": "RCG",
-  "sector": "AGG",
+  "sector": "SPY",
   "name": "RENN Fund"
  },
  {
   "ticker": "RMMZ",
-  "sector": "AGG",
-  "name": "Western Asset Municipal High Income Fund II"
+  "sector": "MUB",
+  "name": "RiverNorth Managed Duration Municipal Income Fund II"
  },
  {
   "ticker": "RMI",
-  "sector": "AGG",
+  "sector": "MUB",
   "name": "RiverNorth Managed Duration Municipal Income"
  },
  {
@@ -1321,12 +1321,12 @@
  },
  {
   "ticker": "RFM",
-  "sector": "AGG",
+  "sector": "MUB",
   "name": "RiverNorth Flexible Municipal Income Fund"
  },
  {
   "ticker": "MXE",
-  "sector": "EWW",
+  "sector": "EEM",
   "name": "Mexico Equity and Income Fund"
  },
  {
@@ -1377,7 +1377,7 @@
  {
   "ticker": "ERH",
   "sector": "XLU",
-  "name": "Allspring Utilities & High Income"
+  "name": "Allspring Utilities & High Income Fund"
  },
  {
   "ticker": "PEO",
@@ -1481,7 +1481,7 @@
  },
  {
   "ticker": "BCV",
-  "sector": "QQQ",
+  "sector": "CWB",
   "name": "Bancroft Fund"
  },
  {
@@ -1526,7 +1526,7 @@
  },
  {
   "ticker": "CCD",
-  "sector": "QQQ",
+  "sector": "CWB",
   "name": "Calamos Dynamic Convertible and Income"
  },
  {
@@ -1542,16 +1542,16 @@
  {
   "ticker": "RVT",
   "sector": "SPY",
-  "name": "Royce Value Trust"
+  "name": "Royce Small-cap Trust"
  },
  {
   "ticker": "NCZ",
-  "sector": "QQQ",
+  "sector": "CWB",
   "name": "Virtus Convertible & Income Fund II"
  },
  {
   "ticker": "AVK",
-  "sector": "SPY",
+  "sector": "CWB",
   "name": "Advent Convertible & Income Fund"
  },
  {
@@ -1562,7 +1562,7 @@
  {
   "ticker": "NBXG",
   "sector": "QQQ",
-  "name": "Neuberger Berman Next Gen Connectivity"
+  "name": "Neuberger Next Generation Connectivity Fund"
  },
  {
   "ticker": "BCAT",
@@ -1616,7 +1616,7 @@
  },
  {
   "ticker": "CHI",
-  "sector": "QQQ",
+  "sector": "CWB",
   "name": "Calamos Convertible Opportunities & Income"
  },
  {
@@ -1637,7 +1637,7 @@
  {
   "ticker": "ETJ",
   "sector": "QQQ",
-  "name": "Eaton Vance Risk-Managed Diversified Equity Income"
+  "name": "Eaton Vance Risk-Managed Diversified Equity Income Fund"
  },
  {
   "ticker": "ADX",
@@ -1682,7 +1682,7 @@
  {
   "ticker": "EXG",
   "sector": "QQQ",
-  "name": "Eaton Vance Tax-Managed Global Diversified Equity Income"
+  "name": "Eaton Vance Tax-Managed Global Diversified Equity Income Fund"
  },
  {
   "ticker": "CSQ",
@@ -1716,7 +1716,7 @@
  },
  {
   "ticker": "CHY",
-  "sector": "QQQ",
+  "sector": "CWB",
   "name": "Calamos Convertible & High Income"
  },
  {
@@ -1737,7 +1737,7 @@
  {
   "ticker": "BTO",
   "sector": "SPY",
-  "name": "John Hancock Financial Opportunities"
+  "name": "JHancock Financial Opportunities"
  },
  {
   "ticker": "SCD",
@@ -1751,7 +1751,7 @@
  },
  {
   "ticker": "NCV",
-  "sector": "QQQ",
+  "sector": "CWB",
   "name": "Virtus Convertible & Income Fund"
  },
  {
