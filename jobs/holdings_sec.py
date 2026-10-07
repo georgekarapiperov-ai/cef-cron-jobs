@@ -39,7 +39,7 @@ ROOT = Path(__file__).resolve().parent.parent
 SEC_RPS = 8
 # Bump when the ticker mapping / classification changes: every fund is then re-processed on the next run,
 # not only funds with a new filing (2026-10-07 v2: US listing first — Exxon XOM, Chubb CB, BNY; OTC copies avoided).
-JOB_VERSION = 2
+JOB_VERSION = 3          # v3: company name instead of a generic title ("COMMON STOCK" in MXF's filing)
 FIGI_URL = "https://api.openfigi.com/v3/mapping"
 
 # Bloomberg exchange code (OpenFIGI exchCode) -> Yahoo suffix, for the listings we can price.
@@ -518,7 +518,9 @@ def finish_fund(rec, figi, pref_cusips):
         if cls in ("equity", "preferred", "fund") and not t and (
                 h.get("fv") == "3" or not (h.get("cusip") or h.get("isin") or h.get("tkr"))):
             cls, proxy = "private", None          # no market listing: private company / restricted share class
-        row = {"n": h.get("title") or h.get("name"), "t": t, "c": cls, "p": round(h["pct"], 4) if h.get("pct") is not None else None,
+        title, name = (h.get("title") or "").strip(), (h.get("name") or "").strip()
+        generic = re.fullmatch(r"(common|ordinary|preferred)?\s*(stock|shares?|units?|equity|shs)( class [a-z])?\.?", title, re.I)
+        row = {"n": (name if (generic or not title) and name else title) or name, "t": t, "c": cls, "p": round(h["pct"], 4) if h.get("pct") is not None else None,
                "usd": round(h["usd"]) if h.get("usd") is not None else None, "cat": h.get("cat"), "iss": h.get("iss"),
                "ctry": h.get("ctry"), "cur": h.get("cur"), "cusip": h.get("cusip"), "isin": h.get("isin")}
         if proxy:
