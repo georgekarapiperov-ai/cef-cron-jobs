@@ -29,6 +29,10 @@ from pathlib import Path
 
 import httpx
 
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from holdings_diff import diff_lists  # noqa: E402
+
 ROOT = Path(__file__).resolve().parent.parent
 UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36")
@@ -296,6 +300,8 @@ async def main():
     res_path = out / "holdings-sponsor.json"
     prev = json.loads(res_path.read_text(encoding="utf-8")) if res_path.exists() else {"funds": {}, "problems": {}}
     funds, problems = dict(prev.get("funds", {})), {}
+    checks = dict(prev.get("checks", {}))
+    now_iso = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     stale_cut = (datetime.now(timezone.utc).replace(year=datetime.now(timezone.utc).year - 1)).strftime("%Y-%m-%d")
 
     names = [n.strip() for n in a.only.split(",")] if a.only else list(PLUGINS)
@@ -314,23 +320,38 @@ async def main():
             for t, f in got.items():
                 if "error" in f:
                     problems[t] = f"{plug.name}: {f['error']}"
+                    checks[t] = {"at": now_iso, "result": "problem: " + f["error"]}
                     continue
                 if (f["asOf"] or "") < stale_cut:
                     problems[t] = f"{plug.name}: list is as of {f['asOf']} — too old, not used"
+                    checks[t] = {"at": now_iso, "result": f"list too old ({f['asOf']}) — not used"}
                     continue
                 old = funds.get(t)
                 if old and old.get("source") == plug.name and (old.get("asOf") or "") > f["asOf"]:
                     problems[t] = f"{plug.name}: new list ({f['asOf']}) is older than the stored one — kept stored"
+                    checks[t] = {"at": now_iso, "result": "site shows an older list — kept the stored one"}
                     continue
                 rows, summ = finish(f["rows"], (sec.get(t) or {}).get("holdings") or [])
-                funds[t] = {"ticker": t, "source": plug.name, "url": f["url"], "asOf": f["asOf"], "full": f["full"],
-                            "weightBasis": f.get("basis", "% of portfolio (sponsor)"), **summ, "holdings": rows,
-                            "checkedAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")}
+                rec = {"ticker": t, "source": plug.name, "url": f["url"], "asOf": f["asOf"], "full": f["full"],
+                       "weightBasis": f.get("basis", "% of portfolio (sponsor)"), **summ, "holdings": rows, "checkedAt": now_iso}
+                if old and old.get("source") == plug.name:
+                    d = diff_lists(old["holdings"], rows, top=None if f["full"] else len(rows))
+                    changed = any(d["counts"].values())
+                    if old.get("asOf") != f["asOf"] or changed:
+                        rec["changes"] = {"since": old.get("asOf"), "detectedAt": now_iso, **d}
+                    elif old.get("changes"):
+                        rec["changes"] = old["changes"]          # same list again: keep the last real change
+                    checks[t] = {"at": now_iso, "result": f"new list (as of {f['asOf']})" if old.get("asOf") != f["asOf"]
+                                 else ("list changed" if changed else "same list as last check")}
+                else:
+                    checks[t] = {"at": now_iso, "result": "first download"}
+                funds[t] = rec
                 ok += 1
             say(f"{name}: {ok} funds in {time.time() - t0:.0f}s, {sum(1 for f in got.values() if 'error' in f)} problems")
 
     doc = {"ok": True, "generatedAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-           "source": "sponsor websites", "count": len(funds), "funds": funds, "problems": problems}
+           "source": "sponsor websites", "count": len(funds), "funds": funds, "problems": problems,
+           "checks": checks}
     tmp = out / "holdings-sponsor.tmp"
     tmp.write_text(json.dumps(doc, separators=(",", ":")), encoding="utf-8")
     tmp.replace(res_path)

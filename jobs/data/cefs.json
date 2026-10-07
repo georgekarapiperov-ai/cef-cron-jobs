@@ -181,7 +181,7 @@
  },
  {
   "ticker": "CEF",
-  "sector": "AGG",
+  "sector": "GLD",
   "name": "Sprott Physical Gold and Silver Trust"
  },
  {
@@ -296,8 +296,8 @@
  },
  {
   "ticker": "KTF",
-  "sector": "AGG",
-  "name": "Invesco Municipal Trust"
+  "sector": "MUB",
+  "name": "DWS Municipal Income"
  },
  {
   "ticker": "BIT",
@@ -357,7 +357,7 @@
  {
   "ticker": "MFM",
   "sector": "MUB",
-  "name": "MFS Municipal Income Trust III"
+  "name": "Aberdeen Municipal Income"
  },
  {
   "ticker": "VVR",
@@ -567,12 +567,12 @@
  {
   "ticker": "BGH",
   "sector": "HYG",
-  "name": "BlackRock Corporate High Yield Fund VI"
+  "name": "Barings Global Short Duration High Yield"
  },
  {
   "ticker": "RMM",
-  "sector": "AGG",
-  "name": "Western Asset Municipal Partners Fund II"
+  "sector": "MUB",
+  "name": "RiverNorth Managed Duration Muni Inc Fd"
  },
  {
   "ticker": "HTD",
@@ -736,8 +736,8 @@
  },
  {
   "ticker": "RFMZ",
-  "sector": "AGG",
-  "name": "Voya Rate Advantage Municipal Income Fund"
+  "sector": "MUB",
+  "name": "RiverNorth Flexible Municipal Income II"
  },
  {
   "ticker": "GLV",
@@ -762,7 +762,7 @@
  {
   "ticker": "EDD",
   "sector": "EMB",
-  "name": "Stone Harbor Emerging Markets Total Income"
+  "name": "Morgan Stanley Emrgng Mkts Domestic Debt"
  },
  {
   "ticker": "PGP",
@@ -786,8 +786,8 @@
  },
  {
   "ticker": "DMB",
-  "sector": "AGG",
-  "name": "BlackRock Municipal Income Trust II"
+  "sector": "MUB",
+  "name": "BNY Mellon Muni Bond Infrastructure Fund"
  },
  {
   "ticker": "GUT",
@@ -826,8 +826,8 @@
  },
  {
   "ticker": "TPZ",
-  "sector": "AGG",
-  "name": "Tortoise Power and Energy Infrastructure"
+  "sector": "XLU",
+  "name": "Tortoise Electrification Infrastructure ETF"
  },
  {
   "ticker": "EMF",
@@ -877,12 +877,12 @@
  {
   "ticker": "DSM",
   "sector": "MUB",
-  "name": "BlackRock Municipal Income Trust"
+  "name": "BNY Mellon Strategic Muni Bond"
  },
  {
   "ticker": "SCOP",
-  "sector": "AGG",
-  "name": "Angel Oak Financial Strategies Income Term"
+  "sector": "GLD",
+  "name": "Sprott Physical Copper Trust"
  },
  {
   "ticker": "FINS",
@@ -896,7 +896,7 @@
  },
  {
   "ticker": "NXDT",
-  "sector": "AGG",
+  "sector": "VNQ",
   "name": "NexPoint Diversified Real Estate Trust"
  },
  {
@@ -951,8 +951,8 @@
  },
  {
   "ticker": "RVII",
-  "sector": "AGG",
-  "name": "BlackRock Health Sciences Trust II / N/A"
+  "sector": "QQQ",
+  "name": "Robinhood Ventures Fund II"
  },
  {
   "ticker": "MXF",
@@ -1086,8 +1086,8 @@
  },
  {
   "ticker": "ETX",
-  "sector": "AGG",
-  "name": "Eaton Vance Municipal Bond Fund II"
+  "sector": "MUB",
+  "name": "EV Municipal Income 2028 Term Trust"
  },
  {
   "ticker": "FMN",
@@ -1207,7 +1207,7 @@
  {
   "ticker": "PMO",
   "sector": "MUB",
-  "name": "PIMCO Municipal Income Fund II"
+  "name": "Franklin Municipal Opportunities"
  },
  {
   "ticker": "NPV",
@@ -1221,8 +1221,8 @@
  },
  {
   "ticker": "NSLR",
-  "sector": "AGG",
-  "name": "Nuveen Select Tax-Free Income Portfolio II"
+  "sector": "SPY",
+  "name": "Neostellar Capital Corp"
  },
  {
   "ticker": "BMN",

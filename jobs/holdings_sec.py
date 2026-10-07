@@ -32,6 +32,9 @@ from pathlib import Path
 import httpx
 from lxml import etree
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from holdings_diff import diff_lists  # noqa: E402
+
 ROOT = Path(__file__).resolve().parent.parent
 SEC_RPS = 8
 FIGI_URL = "https://api.openfigi.com/v3/mapping"
@@ -435,6 +438,8 @@ async def process_fund(sec, fund, cikmap, overrides, prev, force):
     filing, company = await latest_nport(sec, cik, series, fund["name"])
     if not filing:
         return {"error": f"no N-PORT filings for CIK {cik} ({company}) — not a registered fund that files N-PORT"}
+    if (filing.get("rep") or "") < _years_from_now(-1):     # NXDT: became a REIT in 2022, last N-PORT is from then
+        return {"error": f"last N-PORT is as of {filing.get('rep')} — the fund stopped filing (not used)"}
     if prev and prev.get("accession") == filing["acc"] and not force:
         return {"unchanged": True}
     parsed = filing.get("_parsed") or parse_nport(await fetch_xml(sec, cik, filing["acc"]))
@@ -535,16 +540,45 @@ def figi_wanted(rec, pref_cusips):
     return want
 
 
-async def load_cik_map(sec):
-    ct = (await sec.get("https://www.sec.gov/files/company_tickers.json")).json()
-    out = {v["ticker"].upper(): {"cik": v["cik_str"], "title": v["title"]} for v in ct.values()}
-    mf = (await sec.get("https://www.sec.gov/files/company_tickers_mf.json")).json()
-    f = mf["fields"]
-    for row in mf["data"]:
-        d = dict(zip(f, row))
-        t = (d.get("symbol") or "").upper()
-        if t and t not in out:
-            out[t] = {"cik": d["cik"], "seriesId": d.get("seriesId")}
+async def load_cik_map(sec, cache_path):
+    """ticker -> CIK. SEC publishes the same list three ways (company_tickers.json returned 404 on 2026-10-07 while
+    the others worked); the last good map is kept in cik-map.json as a final fallback."""
+    out = {}
+    async def company_tickers():
+        ct = (await sec.get("https://www.sec.gov/files/company_tickers.json")).json()
+        return {v["ticker"].upper(): {"cik": v["cik_str"], "title": v["title"]} for v in ct.values()}
+    async def exchange_file():
+        ex = (await sec.get("https://www.sec.gov/files/company_tickers_exchange.json")).json()
+        f = ex["fields"]
+        return {d["ticker"].upper(): {"cik": d["cik"], "title": d.get("name")}
+                for d in (dict(zip(f, row)) for row in ex["data"]) if d.get("ticker")}
+    async def ticker_txt():
+        txt = (await sec.get("https://www.sec.gov/include/ticker.txt")).text
+        return {t.upper(): {"cik": int(c)} for t, c in (l.split("	") for l in txt.splitlines() if "	" in l)}
+    for src in (company_tickers, exchange_file, ticker_txt):
+        try:
+            out = await src()
+            if len(out) > 1000:
+                break
+        except Exception as e:  # noqa: BLE001
+            print(f"  SEC ticker list via {src.__name__} failed: {e}", flush=True)
+    try:
+        mf = (await sec.get("https://www.sec.gov/files/company_tickers_mf.json")).json()
+        f = mf["fields"]
+        for row in mf["data"]:
+            d = dict(zip(f, row))
+            t = (d.get("symbol") or "").upper()
+            if t and t not in out:
+                out[t] = {"cik": d["cik"], "seriesId": d.get("seriesId")}
+    except Exception as e:  # noqa: BLE001
+        print(f"  SEC fund ticker list failed: {e}", flush=True)
+    if len(out) > 1000:
+        cache_path.write_text(json.dumps(out), encoding="utf-8")
+    elif cache_path.exists():
+        print("  using the saved ticker->CIK map (SEC lists unavailable)", flush=True)
+        out = json.loads(cache_path.read_text(encoding="utf-8"))
+    else:
+        raise RuntimeError("no SEC ticker list available and no saved copy")
     return out
 
 
@@ -578,7 +612,7 @@ async def main():
     sec = Sec(sec_user_agent())
     figi = Figi(out / "figi-cache.json")
     say(f"{len(cefs)} funds; OpenFIGI {'with' if figi.key else 'without'} API key")
-    cikmap = await load_cik_map(sec)
+    cikmap = await load_cik_map(sec, out / "cik-map.json")
 
     sem = asyncio.Semaphore(6)
     async def one(f):
@@ -601,23 +635,39 @@ async def main():
 
     pref_cusips = load_pref_cusips()
     funds, missing = dict(prev_all.get("funds", {})), dict(prev_all.get("missing", {}))
+    checks = dict(prev_all.get("checks", {}))
+    now_iso = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     for t, r in results:
         if "raw" in r:
             rec = finish_fund(r, figi, pref_cusips)
             if rec["count"] == 0 and t in funds:
                 missing[t] = "new filing had no holdings — kept the previous one"
+                checks[t] = {"at": now_iso, "result": "new filing was empty — kept the previous one"}
                 continue
+            old = funds.get(t)
+            if old and old.get("accession") != rec["accession"]:
+                rec["changes"] = {"since": old.get("asOf"), "detectedAt": now_iso, **diff_lists(old["holdings"], rec["holdings"])}
             funds[t] = rec
             missing.pop(t, None)
+            checks[t] = {"at": now_iso, "result": f"new filing (as of {rec['asOf']})" if old else "first download"}
+        elif r.get("unchanged"):
+            checks[t] = {"at": now_iso, "result": "no new filing"}
         elif "error" in r:
             missing[t] = r["error"] + (" (kept previous filing)" if t in funds else "")
+            checks[t] = {"at": now_iso, "result": "problem: " + r["error"]}
+    # name check against the CURRENT fund names (corrections in app/data/fund_corrections.json change them)
+    names = {c["ticker"]: c["name"] for c in json.loads(Path(a.cefs).read_text(encoding="utf-8"))}
+    for t, f in funds.items():
+        if t in names:
+            f["nameMatch"] = bool(name_tokens(names[t]) & name_tokens(f.get("secName")))
     # a filing older than a year means the fund stopped filing N-PORT (NXDT became a REIT in 2022): never use it
     cutoff = _years_from_now(-1)
     for t in [t for t, f in funds.items() if (f.get("asOf") or "") < cutoff]:
         missing[t] = f"last N-PORT is as of {funds[t].get('asOf')} — the fund stopped filing (not used)"
         del funds[t]
     doc = {"ok": True, "generatedAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-           "source": "SEC EDGAR N-PORT (NPORT-P), tickers via OpenFIGI", "count": len(funds), "funds": funds, "missing": missing}
+           "source": "SEC EDGAR N-PORT (NPORT-P), tickers via OpenFIGI", "count": len(funds), "funds": funds, "missing": missing,
+           "checks": checks}
     tmp = out / "holdings-sec.tmp"
     tmp.write_bytes(gzip.compress(json.dumps(doc, separators=(",", ":")).encode("utf-8"), 6))
     tmp.replace(res_path)
