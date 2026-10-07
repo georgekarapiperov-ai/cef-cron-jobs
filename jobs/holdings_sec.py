@@ -37,6 +37,9 @@ from holdings_diff import diff_lists  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 SEC_RPS = 8
+# Bump when the ticker mapping / classification changes: every fund is then re-processed on the next run,
+# not only funds with a new filing (2026-10-07 v2: US listing first — Exxon XOM, Chubb CB, BNY; OTC copies avoided).
+JOB_VERSION = 2
 FIGI_URL = "https://api.openfigi.com/v3/mapping"
 
 # Bloomberg exchange code (OpenFIGI exchCode) -> Yahoo suffix, for the listings we can price.
@@ -463,12 +466,12 @@ async def process_fund(sec, fund, cikmap, overrides, prev, force):
         return {"error": f"no N-PORT filings for CIK {cik} ({company}) — not a registered fund that files N-PORT"}
     if (filing.get("rep") or "") < _years_from_now(-1):     # NXDT: became a REIT in 2022, last N-PORT is from then
         return {"error": f"last N-PORT is as of {filing.get('rep')} — the fund stopped filing (not used)"}
-    if prev and prev.get("accession") == filing["acc"] and not force:
+    if prev and prev.get("accession") == filing["acc"] and prev.get("jobVersion") == JOB_VERSION and not force:
         return {"unchanged": True}
     parsed = filing.get("_parsed") or parse_nport(await fetch_xml(sec, cik, filing["acc"]))
     overlap = name_tokens(fund["name"]) & (name_tokens(parsed["seriesName"]) | name_tokens(parsed["regName"]))
     return {
-        "ticker": t, "cik": int(cik),
+        "ticker": t, "cik": int(cik), "jobVersion": JOB_VERSION,
         "secName": (parsed["seriesName"] if parsed["seriesName"] not in (None, "N/A") else None) or parsed["regName"] or company,
         "nameMatch": bool(overlap), "form": filing["form"], "accession": filing["acc"],
         "filed": filing["filed"], "asOf": parsed["asOf"] or filing["rep"],
