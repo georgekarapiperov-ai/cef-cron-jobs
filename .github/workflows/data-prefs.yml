@@ -1,0 +1,32 @@
+name: Data - Preferreds (QuantumOnline + Nasdaq + Yahoo)
+# Preferreds / baby bonds / trusts from live sources -> branch data-prefs (prefs-live.json).
+# QuantumOnline: every issue, 1 request/s (~12 min) — catches "called for redemption" and "suspended" within a day.
+# Nasdaq dividend calendar: confirmed upcoming ex-dates (Nasdaq-listed issues). Yahoo: last dividend paid.
+on:
+  schedule:
+    - cron: "30 11 * * 1-5"    # weekdays 7:30 AM New York, before the open
+  workflow_dispatch: {}
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r jobs/requirements.txt
+      - name: Get the previous data (keeps every field's history)
+        run: |
+          mkdir -p out
+          if git fetch -q --depth=1 origin data-prefs; then git --work-tree=out checkout FETCH_HEAD -- . ; else echo "first run"; fi
+      - name: Preferreds
+        run: python jobs/prefs_refresh.py --out out --prefs jobs/data/prefs.json
+      - name: Check the result before publishing
+        run: python -c "import json; d=json.load(open('out/prefs-live.json')); n=len(d['prefs']); print(n,'issues'); assert n>=500, 'too few issues - not publishing'"
+      - name: Publish to the data-prefs branch
+        run: bash scripts/publish-data.sh out data-prefs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
