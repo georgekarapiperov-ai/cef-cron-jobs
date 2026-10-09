@@ -1,0 +1,1 @@
+{"job":"holdings","startedAt":"2026-10-09T14:13:48.867Z","steps":{"group1":{"checked":89,"updated":5,"failed":6,"lookups":0},"group2":{"checked":88,"updated":4,"failed":5,"lookups":1},"group3":{"checked":88,"updated":8,"failed":3,"lookups":0},"group4":{"checked":88,"updated":4,"failed":1,"lookups":1}},"holdingsFunds":340,"finishedAt":"2026-10-09T14:14:41.846Z","keys":342}
