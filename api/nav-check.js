@@ -39,6 +39,14 @@
 // history is saved under the REAL NAV date, and a NAV is never replaced by
 // an older one. checkedAt records when the job ran.
 //
+// NAV DATE = NAVPublished (2026-10-14): the feed's LastUpdated is the PRICE date, not the NAV date. Using it,
+// the evening run (~10 pm NY, before CEFConnect posts the new NAVs) saved the previous day's NAV under the new
+// date (2026-10-13: 247 funds, e.g. BGR 19.90 instead of 20.24), and weekly / monthly / quarterly funds got
+// "today" on an old NAV (EARN's June 30 NAV showed as Oct 13). The feed's NAVPublished field is the real NAV
+// date; LastUpdated is kept as priceAsOf. Snapshots written with the real date carry navDateV: 2 — older
+// snapshots' dates are not trusted by the "never replace a newer NAV" guard. scripts/run-job.mjs rebuilds the
+// mis-dated NAV history once from CEFConnect's own daily history (repairNavHistory).
+//
 // STORAGE: uses Vercel KV — npm install @vercel/kv
 
 import { kv } from "@vercel/kv";
@@ -132,7 +140,7 @@ async function fetchMarketPrice52wRange(ticker) {
 }
 
 // ---- CEFConnect daily-pricing feed: every fund's NAV, price, discount and NAV date in ONE request ----
-const CEFCONNECT_DAILY = "https://www.cefconnect.com/api/v3/DailyPricing?props=Ticker,NAV,LastUpdated,Price,Discount";
+const CEFCONNECT_DAILY = "https://www.cefconnect.com/api/v3/DailyPricing?props=Ticker,NAV,NAVPublished,LastUpdated,Price,Discount";
 let bulkPromise = null;
 function getBulkPricing() {
   if (!bulkPromise) {
@@ -158,7 +166,8 @@ function getBulkPricing() {
             nav: +r.NAV.toFixed(4),
             sharePrice: typeof r.Price === "number" ? +r.Price.toFixed(4) : null,
             premDisc: typeof r.Discount === "number" ? r.Discount : null,
-            date: typeof r.LastUpdated === "string" ? r.LastUpdated.slice(0, 10) : null
+            date: typeof r.NAVPublished === "string" ? r.NAVPublished.slice(0, 10) : null,     // the NAV's own date
+            priceDate: typeof r.LastUpdated === "string" ? r.LastUpdated.slice(0, 10) : null   // the price's date
           };
         }
         return map;
@@ -258,13 +267,13 @@ function getGroup(groupNum) {
 }
 
 async function fetchNavOnce(ticker, needAssetClass) {
-  let nav = null, source = null, sharePrice = null, premDisc = null, date = null;
+  let nav = null, source = null, sharePrice = null, premDisc = null, date = null, priceDate = null;
   let categoryRaw = null, assetClass = null;
 
   // 1) CEFConnect daily-pricing feed (fast, includes the real NAV date)
   const bulk = (await getBulkPricing())[ticker];
   if (bulk && bulk.nav) {
-    ({ nav, sharePrice, premDisc, date } = bulk);
+    ({ nav, sharePrice, premDisc, date, priceDate } = bulk);
     source = "cefconnect";
   }
 
@@ -297,7 +306,7 @@ async function fetchNavOnce(ticker, needAssetClass) {
   }
 
   if (!nav) return null;
-  return { nav, sharePrice, premDisc, source, date, categoryRaw, assetClass };
+  return { nav, sharePrice, premDisc, source, date, priceDate, categoryRaw, assetClass };
 }
 
 async function checkOneNav(ticker) {
@@ -312,8 +321,8 @@ async function checkOneNav(ticker) {
   let navAsOf = result.date || (previous?.checkedAt && previous.nav === nav ? previous.navAsOf : null) || checkedAt.slice(0, 10);
 
   // Never replace a newer NAV with an older one (e.g. a source that hasn't updated yet).
-  // (Only trusts dates written by this version — older rows were labelled with the run date.)
-  if (previous?.checkedAt && previous?.navAsOf && navAsOf < previous.navAsOf) {
+  // (Only trusts dates written with the real NAV date — older rows carry the price date or the run date.)
+  if (previous?.navDateV === 2 && previous?.navAsOf && navAsOf < previous.navAsOf) {
     await kv.set(`nav-current:${ticker}`, { ...previous, checkedAt });
     return { ticker, ok: true, kept: "previous (source had an older NAV)", ...previous, checkedAt };
   }
@@ -329,6 +338,8 @@ async function checkOneNav(ticker) {
     sharePrice,
     premiumDiscountPct: premDisc,
     navAsOf,
+    navDateV: 2,                       // navAsOf is the real NAV date (CEFConnect NAVPublished)
+    priceAsOf: result.priceDate || null,
     checkedAt,
     source,
     navHigh52w_partial: navRange.high,

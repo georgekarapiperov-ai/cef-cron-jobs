@@ -73,7 +73,7 @@ async function liveFromCefConnect() {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 15000);
   try {
-    const r = await fetch("https://www.cefconnect.com/api/v3/DailyPricing?props=Ticker,NAV,LastUpdated,Price,Discount", {
+    const r = await fetch("https://www.cefconnect.com/api/v3/DailyPricing?props=Ticker,NAV,NAVPublished,LastUpdated,Price,Discount", {
       headers: {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
         "Accept": "application/json, text/plain, */*",
@@ -92,7 +92,8 @@ async function liveFromCefConnect() {
         ticker: t, nav: +x.NAV.toFixed(4),
         sharePrice: typeof x.Price === "number" ? +x.Price.toFixed(4) : null,
         premiumDiscountPct: typeof x.Discount === "number" ? x.Discount : null,
-        navAsOf: typeof x.LastUpdated === "string" ? x.LastUpdated.slice(0, 10) : null,
+        navAsOf: typeof x.NAVPublished === "string" ? x.NAVPublished.slice(0, 10) : null,   // real NAV date (LastUpdated = price date)
+        priceAsOf: typeof x.LastUpdated === "string" ? x.LastUpdated.slice(0, 10) : null,
         checkedAt, source: "cefconnect-live"
       };
     });

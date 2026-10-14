@@ -48,6 +48,35 @@ async function seedNavHistory() {
   return { missing: missing.length, seeded };
 }
 
+async function repairNavHistory() {
+  // ONCE (2026-10-14): until then the job saved NAVs under CEFConnect's PRICE date, so the history holds the
+  // previous day's NAV under the next date and old weekly / quarterly NAVs repeated under every run date.
+  // Rebuilt from CEFConnect's own daily history (real NAV dates): inside its 1-year window only its dates are
+  // kept; older rows stay. Marked done in the store (nav-history-version = 2), so it never runs again.
+  if ((await kv.get("nav-history-version")) === 2) return { skipped: "already repaired" };
+  const { CEF_WATCHLIST } = await import(api("../lib/news-shared.js"));
+  let i = 0, repaired = 0, failed = 0;
+  async function worker() {
+    while (i < CEF_WATCHLIST.length) {
+      const t = CEF_WATCHLIST[i++];
+      try {
+        const r = await fetch(`https://www.cefconnect.com/api/v3/pricinghistory/${t}/1Y`, { headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Safari/537.36", "Accept": "application/json", "Referer": "https://www.cefconnect.com/" } });
+        const j = await r.json();
+        const rows = (j?.Data?.PriceHistory || []).filter(x => typeof x.NAVData === "number" && x.NAVData > 0)
+          .map(x => ({ date: String(x.DataDate).slice(0, 10), nav: x.NAVData, source: "cefconnect-history" }));
+        if (!rows.length) { failed++; continue; }
+        const first = rows.map(x => x.date).sort()[0];
+        const older = ((await kv.get(`nav-history:${t}`)) || []).filter(x => x.date < first);
+        await kv.set(`nav-history:${t}`, [...older, ...rows].sort((a, b) => a.date.localeCompare(b.date)));
+        repaired++;
+      } catch { failed++; }
+    }
+  }
+  await Promise.all(Array.from({ length: 6 }, worker));
+  if (repaired > CEF_WATCHLIST.length * 0.8) await kv.set("nav-history-version", 2);   // else: try again next run
+  return { repaired, failed };
+}
+
 try {
   if (job === "news") {
     const sources = ["yahoo", "google", "stocktwits", "newsfilter", "finviz", "alphavantage", "secedgar"];
@@ -61,6 +90,7 @@ try {
     } else summary.warning = "news output empty — kept the previous news.json";
   } else if (job === "nav") {
     summary.steps.seed = await seedNavHistory(); log("seed", JSON.stringify(summary.steps.seed));
+    summary.steps.repair = await repairNavHistory(); log("history repair", JSON.stringify(summary.steps.repair));
     const r = await call("nav-check.js", {}, 25 * 60 * 1000);
     summary.steps.navCheck = { checked: r.body?.checked, failed: r.body?.failed, navDates: r.body?.navDates, feed: r.body?.cefconnectFeedFunds }; log("nav-check", JSON.stringify(summary.steps.navCheck));
     kv.__save();
