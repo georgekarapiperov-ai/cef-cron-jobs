@@ -256,10 +256,12 @@ async def main():
             for p in prefs:            # issues not on the calendar: clear only the "next ex-date" block, never the rest
                 rec = store.get(p["sym"])
                 if rec and p["sym"] not in got:
-                    for k in ("exdivNext", "exdivAmt", "paydtNext", "recordNext"):
-                        f = rec["fields"].get(k)
-                        if f and (f.get("v") or "9999") < date.today().isoformat():
-                            rec["fields"].pop(k, None)          # that ex-date has passed
+                    nxt = (rec["fields"].get("exdivNext") or {}).get("v")
+                    # that ex-date has passed: drop the whole block (the amount is a number — comparing IT with a
+                    # date crashed the job, 2026-10-16)
+                    if nxt and str(nxt) < date.today().isoformat():
+                        for k in ("exdivNext", "exdivAmt", "paydtNext", "recordNext"):
+                            rec["fields"].pop(k, None)
             for s, f in got.items():
                 changes += merge(store, s, f, "Nasdaq")
         if "yahoo" in srcs:
