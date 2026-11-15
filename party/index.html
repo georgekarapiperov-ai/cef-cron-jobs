@@ -1,0 +1,683 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Heads or Tell</title>
+<meta name="description" content="Most-likely-to party game. Answer a secret question with a name, then call the coin. Call it wrong and the question is revealed.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: one phone-width column. The coin sits in the middle of the game screen; everything else stays quiet around it. */
+:root {
+  color-scheme: dark;
+  --bg: #17111f;
+  --surface: #221a2e;
+  --surface-2: #2e2440;
+  --line: #40335a;
+  --fg: #f3ecf7;
+  --muted: #a898bb;
+  --coin: #e8b64a;
+  --coin-deep: #a87618;
+  --coin-ink: #3a2703;
+  --secret: #7fd6b4;
+  --reveal: #ff7a6b;
+  --display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --body: "Figtree", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --r: 14px;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font: 500 16px/1.45 var(--body);
+  min-height: 100dvh;
+  padding-block: calc(16px + env(safe-area-inset-top, 0px)) calc(28px + env(safe-area-inset-bottom, 0px));
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+[hidden] { display: none !important; }
+.wrap { max-width: 460px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
+h1, h2 { font-family: var(--display); font-weight: 800; margin: 0; text-wrap: balance; letter-spacing: -0.02em; }
+h1 { font-size: clamp(2.6rem, 13vw, 3.6rem); line-height: 0.95; }
+h1 em { font-style: normal; color: var(--coin); }
+h2 { font-size: 1.5rem; line-height: 1.1; }
+p { margin: 0; }
+.muted { color: var(--muted); }
+.label { font-size: 0.74rem; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: var(--muted); }
+.stack { display: flex; flex-direction: column; gap: 12px; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.row > .grow { flex: 1 1 0; min-width: 0; }
+
+button, input { font: inherit; color: inherit; }
+button {
+  border: 0; border-radius: var(--r); padding: 14px 18px; font-weight: 700; cursor: pointer;
+  background: var(--surface-2); color: var(--fg); min-height: 50px;
+  transition: transform .08s ease, filter .15s ease;
+}
+button:active { transform: scale(0.97); }
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+button.primary { background: var(--coin); color: var(--coin-ink); }
+button.ghost { background: transparent; border: 1.5px solid var(--line); }
+button.small { min-height: 38px; padding: 8px 12px; font-size: 0.88rem; border-radius: 10px; }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--coin); outline-offset: 2px; }
+input[type=text] {
+  width: 100%; min-height: 50px; padding: 12px 14px; border-radius: var(--r);
+  border: 1.5px solid var(--line); background: var(--surface); font-weight: 600;
+}
+input::placeholder { color: var(--muted); font-weight: 500; }
+
+.panel { background: var(--surface); border-radius: var(--r); padding: 16px; }
+.rules { padding-left: 1.1em; margin: 0; display: flex; flex-direction: column; gap: 6px; color: var(--muted); }
+.rules b { color: var(--fg); font-weight: 600; }
+
+/* top bar */
+.bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.code { font-family: var(--display); font-weight: 800; font-size: 1.25rem; letter-spacing: 0.12em; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--secret); margin-right: 6px; vertical-align: 1px; }
+.dot.off { background: var(--reveal); }
+
+.share { display: flex; gap: 8px; align-items: stretch; }
+.share input { font-size: 0.85rem; font-weight: 500; min-height: 44px; }
+
+/* players */
+.players { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; margin: 0; padding: 0; }
+.players li {
+  display: flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 999px;
+  background: var(--surface-2); font-weight: 600; font-size: 0.92rem; max-width: 100%;
+}
+.players li span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.players li.turn { background: var(--coin); color: var(--coin-ink); }
+.players li small { font-weight: 700; font-size: 0.68rem; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.75; }
+.players li button { all: unset; cursor: pointer; padding: 0 2px; font-weight: 800; opacity: 0.7; }
+.players li button:focus-visible { outline: 2px solid currentColor; border-radius: 4px; }
+
+.seg { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; background: var(--surface); padding: 6px; border-radius: var(--r); }
+.seg button { min-height: 42px; padding: 8px; background: transparent; font-size: 0.92rem; }
+.seg button[aria-pressed=true] { background: var(--surface-2); box-shadow: inset 0 0 0 1.5px var(--coin); }
+
+/* game */
+.turnline { text-align: center; }
+.turnline h2 span { color: var(--coin); }
+.secretcard { background: var(--surface); border: 1.5px dashed var(--line); border-radius: var(--r); padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.question { font-family: var(--display); font-weight: 800; font-size: 1.45rem; line-height: 1.15; text-wrap: balance; overflow-wrap: anywhere; }
+.question.veiled { filter: blur(11px); user-select: none; }
+.names { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.names button { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.answer { text-align: center; }
+.answer .big { font-family: var(--display); font-weight: 800; font-size: clamp(2.2rem, 11vw, 3rem); line-height: 1; color: var(--coin); overflow-wrap: anywhere; }
+.verdict { border-radius: var(--r); padding: 16px; text-align: center; display: flex; flex-direction: column; gap: 8px; }
+.verdict.secret { background: color-mix(in srgb, var(--secret) 14%, var(--surface)); }
+.verdict.secret .label { color: var(--secret); }
+.verdict.reveal { background: color-mix(in srgb, var(--reveal) 16%, var(--surface)); }
+.verdict.reveal .label { color: var(--reveal); }
+
+/* coin */
+.cointray { display: flex; justify-content: center; padding: 14px 0 6px; perspective: 800px; }
+.toss { width: 132px; height: 132px; }
+.toss.go { animation: toss 2.4s cubic-bezier(.3,.1,.3,1); }
+@keyframes toss { 0% { transform: translateY(0) scale(1); } 40% { transform: translateY(-46px) scale(1.18); } 100% { transform: translateY(0) scale(1); } }
+.coin { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; }
+.coin.go { transition: transform 2.4s cubic-bezier(.25,.6,.25,1); }
+.face {
+  position: absolute; inset: 0; border-radius: 50%; backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  display: grid; place-items: center; text-align: center;
+  background: radial-gradient(circle at 35% 30%, #f8dc8d, var(--coin) 55%, var(--coin-deep));
+  box-shadow: inset 0 0 0 6px color-mix(in srgb, var(--coin-deep) 70%, transparent), inset 0 0 0 9px color-mix(in srgb, #fff 22%, transparent), 0 10px 30px #0007;
+  color: var(--coin-ink); font-family: var(--display); font-weight: 800; font-size: 1.15rem; letter-spacing: 0.1em;
+}
+.face b { display: block; font-size: 3rem; line-height: 0.9; letter-spacing: 0; }
+.face.tails { transform: rotateX(180deg); }
+@media (prefers-reduced-motion: reduce) {
+  .toss.go { animation: none; }
+  .coin.go { transition-duration: .01s; }
+}
+
+.log { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.log li { background: var(--surface); border-radius: 12px; padding: 10px 12px; font-size: 0.92rem; overflow-wrap: anywhere; }
+.log li .who { font-weight: 700; }
+.log li .q { display: block; margin-top: 2px; }
+.log li.kept .q { color: var(--secret); }
+.log li.out .q { color: var(--fg); }
+.err { color: var(--reveal); font-weight: 600; }
+.center { text-align: center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HOME / JOIN -->
+  <section id="home" class="stack" hidden>
+    <p class="label">Party game · 2 to 10 players</p>
+    <h1>Heads<br>or <em>Tell</em></h1>
+    <p class="muted" id="homeLead">A secret question about the people in the room. You answer with a name. Then the coin decides if everyone finds out what was asked.</p>
+    <form id="joinForm" class="stack" autocomplete="off">
+      <label class="label" for="nameInput">Your name</label>
+      <input id="nameInput" type="text" maxlength="16" placeholder="Type your name" required>
+      <button class="primary" id="joinBtn" type="submit">Create a room</button>
+      <p class="err" id="homeErr" hidden></p>
+    </form>
+    <div id="codeJoin" class="stack">
+      <label class="label" for="codeInput">Got a room code?</label>
+      <div class="row">
+        <input id="codeInput" class="grow" type="text" maxlength="8" placeholder="e.g. KWMPT" style="text-transform:uppercase">
+        <button id="codeBtn" type="button">Join</button>
+      </div>
+    </div>
+    <div class="panel">
+      <ol class="rules">
+        <li><b>On your turn</b> you get a question only you can see.</li>
+        <li><b>Pick the person</b> it fits best. Everyone sees the name you picked.</li>
+        <li><b>Call the coin.</b> Guess right and the question stays secret.</li>
+        <li><b>Guess wrong</b> and the question is shown to the whole room.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ROOM (lobby + game share the top bar) -->
+  <section id="roomView" class="stack" hidden>
+    <div class="bar">
+      <div><span class="label">Room</span><br><span class="code" id="roomCode"></span></div>
+      <div class="row">
+        <span class="muted" style="font-size:.85rem"><span class="dot" id="connDot"></span><span id="connText">Connecting</span></span>
+        <button class="small ghost" id="leaveBtn" type="button">Leave</button>
+      </div>
+    </div>
+
+    <ul class="players" id="players" aria-label="Players"></ul>
+
+    <!-- LOBBY -->
+    <div id="lobby" class="stack" hidden>
+      <h2>Waiting for everyone</h2>
+      <div class="stack">
+        <span class="label">Send this link to your friends</span>
+        <div class="share">
+          <input id="shareLink" type="text" readonly aria-label="Room link">
+          <button class="small" id="copyBtn" type="button">Copy</button>
+        </div>
+      </div>
+      <div class="stack">
+        <span class="label">Questions</span>
+        <div class="seg" id="spice">
+          <button type="button" data-spice="mild" aria-pressed="false">Mild</button>
+          <button type="button" data-spice="spicy" aria-pressed="false">Spicy</button>
+          <button type="button" data-spice="brutal" aria-pressed="false">Brutal</button>
+          <button type="button" data-spice="mix" aria-pressed="false">All</button>
+        </div>
+      </div>
+      <button class="primary" id="startBtn" type="button">Start the game</button>
+      <p class="muted center" id="lobbyNote"></p>
+    </div>
+
+    <!-- GAME -->
+    <div id="game" class="stack" hidden>
+      <div class="turnline">
+        <p class="label" id="roundLabel"></p>
+        <h2 id="turnTitle"></h2>
+      </div>
+      <div id="stageTop" class="stack"></div>
+      <div class="cointray" id="coinTray">
+        <div class="toss" id="toss">
+          <div class="coin" id="coin">
+            <div class="face heads"><div><b>H</b>HEADS</div></div>
+            <div class="face tails"><div><b>T</b>TAILS</div></div>
+          </div>
+        </div>
+      </div>
+      <div id="stageBottom" class="stack"></div>
+      <div class="stack" id="logWrap" hidden>
+        <span class="label">So far</span>
+        <ul class="log" id="log"></ul>
+      </div>
+      <button class="small ghost" id="endBtn" type="button" hidden>End game and go back to the lobby</button>
+    </div>
+  </section>
+</div>
+
+<script src="mqtt.min.js"></script>
+<script>
+(() => {
+"use strict";
+
+/* ---------- questions ---------- */
+const MILD = [
+"become famous","forget their own birthday","survive a zombie apocalypse","cry at a cartoon","show up late to their own wedding",
+"win a lot of money and lose it in a month","talk their way out of a speeding ticket","get lost with the map open","laugh at the worst possible moment",
+"become a millionaire","eat something off the floor","fall asleep at a party","adopt ten cats","move to another country without telling anyone",
+"go viral for something embarrassing","start a fight over a board game","spend all their money on food","marry someone they met last week",
+"become a teacher","trip on a flat floor","text the wrong person something awkward","forget where they parked","win a reality show",
+"talk to a stranger for three hours","believe a fake news story","be the first one to fall asleep tonight","binge a whole series in one day",
+"get a terrible tattoo","sing loudly in public","lose their phone tonight","become president","cry at a wedding",
+"spend an hour choosing what to watch","be secretly a genius","quit their job to travel the world","start dancing when nobody else is",
+"lie about having read the book","get kicked out of a museum","befriend the taxi driver","keep a secret forever",
+"forget an important anniversary","laugh so hard they fall off the chair","be scared of a tiny dog","buy something useless at 3 a.m.",
+"be the last one to leave the party","argue with a GPS","wave back at someone who was waving at another person","burn water while cooking",
+"take two hours to get ready","reply to a message a week later","win an argument they know they are wrong about","end up on the news",
+"give the best advice and never follow it","start a business that actually works","cancel plans at the last minute","know all the gossip first",
+"pretend to know a song and get the words wrong","make friends with their ex's mother","eat the last slice without asking","talk in their sleep"
+];
+const SPICY = [
+"kiss someone in this room tonight","have a secret crush on someone here","text their ex after two drinks","flirt their way out of trouble",
+"go skinny dipping","have the wildest search history","date two people at the same time","kiss a stranger on a night out",
+"fall for a friend's sibling","send a risky text to the wrong chat","have a secret dating profile","lie about how many people they have kissed",
+"get back together with an ex","flirt with the waiter for a free dessert","be the worst kisser here","be the best kisser here",
+"have a one-night stand on holiday","slide into a celebrity's messages","get caught checking someone out","make the first move",
+"break the most hearts","stalk a crush's profile back to 2015","date someone their friends can't stand","hook up with a coworker",
+"fake being sick to stay in bed with someone","have a crush on a friend's partner","get a hickey and hide it badly","kiss and tell",
+"fall in love on the first date","ghost someone after a great date","be thinking about someone in this room right now","drunk-call a crush",
+"date someone much older","keep a secret relationship going for months","have the most embarrassing bedroom story","get jealous the fastest",
+"leave the party with someone unexpected","send a flirty selfie","forget the name of someone they kissed","flirt with someone here without noticing",
+"say yes to a dare they will regret","sneak out of someone's place before breakfast","marry for money","have a crush on a teacher or a boss",
+"be the biggest tease","go on a date just for the free dinner","get caught kissing in public","have the dirtiest mind in the room",
+"read a partner's messages","fall for someone who is clearly bad news",
+"Who in this room would you kiss right now?","Who here is the most attractive?","Who here would you never, ever date?",
+"Who in this room has the best body?","Who here do you think is the best in bed?","Who here do you think is the worst in bed?",
+"Who in this room have you had a crush on?","Who here would you pick for one night with no consequences?",
+"Who in this room flirts the most with people who are taken?","Who here do you think has the highest body count?",
+"Whose partner or ex do you find attractive?","Who here would you want to see naked?","Who in this room is the most likely to cheat?",
+"Who here have you thought about in a way you would never admit?","Who in this room would you marry tomorrow if you had to?",
+"Who here would be the most boring date?","Who here is definitely hiding a secret relationship or fling?",
+"If everyone here was single, who would you go home with tonight?","Who here do you think has a crush on you?",
+"Who in this room is the biggest player?"
+];
+const BRUTAL = [
+"Who in this room do you like the least?","Who here annoys you the most?","Who in this room do you trust the least?",
+"Who here would you cut out of the group if you had to remove one person?","Who in this room talks behind people's backs the most?",
+"Who here is the most fake?","Who in this room have you lied to most recently?","Who here do you think is secretly jealous of you?",
+"Who in this room are you secretly jealous of?","Who here would you never lend money to?","Who in this room gives the worst advice?",
+"Who here do you think will be the least successful?","Who in this room is the most selfish?",
+"Who here would you not invite to your wedding if you could get away with it?","Who in this room has changed for the worse?",
+"Who here thinks they are better than everyone else?","Who in this room would be the first to betray the group?",
+"Who here is the worst at keeping secrets?","Who in this room do you talk about the most when they are not around?",
+"Who here do you think dislikes you?","Who in this room has the worst taste in partners?","Who here is the most boring to be alone with?",
+"Who in this room would you least want to be stuck in a lift with?","Who here do you think lies the most?",
+"Who in this room is the biggest drama starter?","Who here do you think will end up alone?",
+"Who in this room has hurt you and never apologised?","Who here would be the worst parent?",
+"Who in this room do you think is the least intelligent?","Who here acts the most different when certain people are around?",
+"Who in this room would you swap out of the friend group for someone else?","Who here do you respect the least?",
+"Who in this room is the cheapest with money?","Who here do you think is a bad influence on the others?",
+"Who in this room complains the most?","Who here would you never go on holiday with again?",
+"Who in this room is the most likely to steal your partner?","Who here do you think is with the wrong person?",
+"Who in this room have you been angry at and never told?","Who here would sell out a friend for money?",
+"Who in this room is the worst listener?","Who here tries too hard to be liked?",
+"Who in this room would you call last in an emergency?","Whose life choices here do you judge the most?",
+"Who in this room do you think peaked already?"
+];
+const ALL = MILD.map(t => ({ t, s: 0 })).concat(SPICY.map(t => ({ t, s: 1 })), BRUTAL.map(t => ({ t, s: 2 })));
+const fullQ = i => /^[A-Z]/.test(ALL[i].t) ? ALL[i].t : "Who is most likely to " + ALL[i].t + "?";
+
+/* ---------- tiny helpers ---------- */
+const $ = id => document.getElementById(id);
+const store = {
+  get(k) { try { return localStorage.getItem("hot:" + k); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem("hot:" + k, v); } catch {} },
+  del(k) { try { localStorage.removeItem("hot:" + k); } catch {} }
+};
+const mem = {};
+const rid = n => { const a = new Uint8Array(n); crypto.getRandomValues(a); return Array.from(a, b => "abcdefghjkmnpqrstuvwxyz23456789"[b % 31]).join(""); };
+const rnd = n => { const a = new Uint32Array(1); crypto.getRandomValues(a); return a[0] % n; };
+const clip = (s, n) => String(s == null ? "" : s).replace(/\s+/g, " ").trim().slice(0, n);
+function el(tag, props, ...kids) {
+  const e = document.createElement(tag);
+  if (props) for (const k in props) {
+    if (k === "class") e.className = props[k];
+    else if (k.startsWith("on")) e.addEventListener(k.slice(2), props[k]);
+    else if (props[k] !== false && props[k] != null) e.setAttribute(k, props[k]);
+  }
+  for (const c of kids) if (c != null && c !== false) e.append(c);
+  return e;
+}
+
+/* ---------- identity + room ---------- */
+const params = new URLSearchParams(location.search);
+const BROKER = params.get("broker") || "wss://broker.emqx.io:8084/mqtt";
+const cleanRoom = s => String(s || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8);
+let room = cleanRoom(params.get("room"));
+let pid = store.get("pid"); if (!pid) { pid = rid(10); store.set("pid", pid); }
+let myName = clip(store.get("name"), 16);
+const MAX = 10;
+
+let client = null, connected = false, ready = false, joined = false, wantJoin = false;
+let state = null;
+const players = new Map();
+let veil = true, animKey = null, animDone = null, animTimer = null, homeErr = "";
+
+const base = () => "headsortell/v1/" + room + "/";
+const sorted = () => [...players.entries()].map(([id, p]) => ({ id, ...p })).sort((a, b) => a.t - b.t || (a.id < b.id ? -1 : 1));
+const nameOf = id => (players.get(id) || {}).name || "Someone";
+
+/* ---------- network ---------- */
+function connect() {
+  if (client || !room) return;
+  client = mqtt.connect(BROKER, { clientId: "hot_" + pid + "_" + rid(4), clean: true, reconnectPeriod: 2000, connectTimeout: 12000, keepalive: 30 });
+  client.on("connect", () => {
+    connected = true;
+    client.subscribe(base() + "#", { qos: 1 }, () => {
+      if (joined) announce();
+      if (!ready) setTimeout(() => { ready = true; if (wantJoin) join(); render(); }, 1200);
+    });
+    render();
+  });
+  client.on("close", () => { connected = false; render(); });
+  client.on("message", (topic, payload) => {
+    const sub = topic.slice(base().length);
+    let data = null;
+    if (payload && payload.length) { try { data = JSON.parse(payload.toString()); } catch { return; } }
+    if (sub === "state") onState(data);
+    else if (sub.startsWith("p/")) onPlayer(sub.slice(2), data);
+    render();
+  });
+}
+function send(sub, obj) {
+  if (!client) return;
+  client.publish(base() + sub, obj == null ? "" : JSON.stringify(obj), { qos: 1, retain: true });
+}
+function announce() {
+  let t = Number(store.get("t:" + room));
+  if (!t) { t = Date.now(); store.set("t:" + room, String(t)); }
+  players.set(pid, { name: myName, t });
+  send("p/" + pid, { name: myName, t });
+}
+function onPlayer(id, data) {
+  if (!/^[a-z0-9]{6,16}$/.test(id)) return;
+  if (!data || typeof data !== "object") {
+    players.delete(id);
+    if (id === pid && joined) { joined = false; wantJoin = false; store.del("in:" + room); homeErr = "You are no longer in this room. You can join again."; }
+    return;
+  }
+  const name = clip(data.name, 16), t = Number(data.t);
+  if (!name || !isFinite(t)) return;
+  players.set(id, { name, t });
+}
+function onState(s) {
+  if (!s || typeof s !== "object" || typeof s.v !== "number" || typeof s.by !== "string") return;
+  if (state && !(s.v > state.v || (s.v === state.v && s.by < state.by))) return;
+  if (!["lobby", "ask", "call", "flip"].includes(s.phase)) return;
+  s.log = Array.isArray(s.log) ? s.log.slice(-40) : [];
+  state = s;
+}
+function setState(patch) {
+  state = Object.assign({}, state, patch, { v: (state ? state.v : 0) + 1, by: pid });
+  send("state", state);
+  render();
+}
+
+/* ---------- joining ---------- */
+function join() {
+  if (!ready) { wantJoin = true; return; }
+  wantJoin = false;
+  if (!players.has(pid) && players.size >= MAX) { homeErr = "This room is full (10 players)."; render(); return; }
+  homeErr = "";
+  joined = true;
+  store.set("in:" + room, "1");
+  announce();
+  if (!state) setState({ phase: "lobby", host: pid, spice: "mix", log: [], gid: rid(5), n: 0 });
+  render();
+}
+function leave() {
+  if (joined) send("p/" + pid, null);
+  joined = false; wantJoin = false;
+  players.delete(pid);
+  store.del("in:" + room);
+  homeErr = "";
+  render();
+}
+const isHost = () => !!state && (state.host === pid || !players.has(state.host));
+
+/* ---------- game actions ---------- */
+function nextPid(from) {
+  const list = sorted().map(p => p.id);
+  if (!list.length) return pid;
+  const i = list.indexOf(from);
+  return list[(i + 1) % list.length];
+}
+function startGame() {
+  if (players.size < 2) return;
+  const first = sorted()[rnd(players.size)].id;
+  setState({ phase: "ask", gid: rid(5), n: 1, turn: first, turnName: nameOf(first), target: null, targetName: null, call: null, coin: null, revealed: null, q: null, log: [], host: isHost() ? pid : state.host });
+}
+function qKey() { return "q:" + room + ":" + state.gid + ":" + state.n; }
+function drawQuestion(force) {
+  const k = qKey();
+  let saved = mem[k] != null ? mem[k] : store.get(k);
+  if (saved != null && !force && ALL[+saved]) return +saved;
+  let seen = [];
+  try { seen = JSON.parse(store.get("seen:" + room) || mem.seen || "[]"); } catch {}
+  const shown = new Set(state.log.map(l => l.q).filter(Boolean));
+  const want = state.spice === "mild" ? [0] : state.spice === "spicy" ? [1] : state.spice === "brutal" ? [2] : [0, 1, 2];
+  let pool = ALL.map((q, i) => i).filter(i => want.includes(ALL[i].s) && !shown.has(fullQ(i)));
+  let fresh = pool.filter(i => !seen.includes(i));
+  if (!fresh.length) { seen = []; fresh = pool.length ? pool : ALL.map((q, i) => i); }
+  const pick = fresh[rnd(fresh.length)];
+  seen.push(pick);
+  mem.seen = JSON.stringify(seen); store.set("seen:" + room, mem.seen);
+  mem[k] = String(pick); store.set(k, String(pick));
+  return pick;
+}
+function swapQuestion() {
+  const k = qKey() + ":swap";
+  if (mem[k] || store.get(k)) return;
+  mem[k] = "1"; store.set(k, "1");
+  drawQuestion(true);
+  render();
+}
+function pickTarget(id) {
+  if (state.phase !== "ask" || state.turn !== pid) return;
+  setState({ phase: "call", target: id, targetName: nameOf(id), turnName: myName });
+}
+function callCoin(call) {
+  if (state.phase !== "call" || state.turn !== pid) return;
+  const coin = rnd(2) ? "heads" : "tails";
+  const revealed = coin !== call;
+  const q = revealed ? fullQ(drawQuestion(false)) : null;
+  const entry = { n: state.n, by: state.turnName, target: state.targetName, q };
+  setState({ phase: "flip", call, coin, revealed, q, log: state.log.concat([entry]).slice(-40) });
+}
+function nextTurn() {
+  if (state.phase !== "flip" && !(isHost() && state.phase !== "lobby")) return;
+  const nxt = nextPid(state.turn);
+  setState({ phase: "ask", n: state.n + 1, turn: nxt, turnName: nameOf(nxt), target: null, targetName: null, call: null, coin: null, revealed: null, q: null });
+}
+
+/* ---------- coin ---------- */
+function setCoin(face, animate) {
+  const coin = $("coin"), toss = $("toss");
+  const end = face === "tails" ? 180 : 0;
+  if (!animate) {
+    coin.classList.remove("go"); toss.classList.remove("go");
+    coin.style.transform = "rotateX(" + end + "deg)";
+    return;
+  }
+  coin.classList.remove("go"); toss.classList.remove("go");
+  coin.style.transform = "rotateX(0deg)";
+  void coin.offsetWidth;
+  coin.classList.add("go"); toss.classList.add("go");
+  coin.style.transform = "rotateX(" + (1800 + end) + "deg)";
+}
+
+/* ---------- render ---------- */
+function render() {
+  const inRoom = !!room && joined;
+  $("home").hidden = inRoom;
+  $("roomView").hidden = !inRoom;
+  if (!inRoom) return renderHome();
+
+  $("roomCode").textContent = room;
+  $("connDot").className = "dot" + (connected ? "" : " off");
+  $("connText").textContent = connected ? "Online" : "Reconnecting";
+
+  const list = sorted(), host = isHost();
+  const ul = $("players"); ul.replaceChildren();
+  for (const p of list) {
+    const isTurn = state && state.phase !== "lobby" && state.turn === p.id;
+    ul.append(el("li", { class: isTurn ? "turn" : "" },
+      el("span", null, p.name),
+      p.id === pid ? el("small", null, "you") : null,
+      state && state.host === p.id ? el("small", null, "host") : null,
+      host && p.id !== pid ? el("button", { type: "button", "aria-label": "Remove " + p.name, onclick: () => send("p/" + p.id, null) }, "×") : null));
+  }
+
+  const phase = state ? state.phase : "lobby";
+  $("lobby").hidden = phase !== "lobby";
+  $("game").hidden = phase === "lobby";
+  if (phase === "lobby") renderLobby(host, list); else renderGame(host, list);
+}
+
+function renderHome() {
+  const hasRoom = !!room;
+  $("homeLead").textContent = hasRoom
+    ? (ready ? (players.size ? "In room " + room + " now: " + sorted().map(p => p.name).join(", ") + "." : "You are opening room " + room + ". Add your name to join.") : "Looking for room " + room + "…")
+    : "A secret question about the people in the room. You answer with a name. Then the coin decides if everyone finds out what was asked.";
+  $("joinBtn").textContent = wantJoin ? "Joining…" : hasRoom ? "Join room " + room : "Create a room";
+  $("joinBtn").disabled = wantJoin;
+  $("codeJoin").hidden = hasRoom;
+  const inp = $("nameInput");
+  if (!inp.value && myName && document.activeElement !== inp) inp.value = myName;
+  $("homeErr").hidden = !homeErr; $("homeErr").textContent = homeErr;
+}
+
+function renderLobby(host, list) {
+  const link = location.origin + location.pathname + "?room=" + room;
+  if ($("shareLink").value !== link) $("shareLink").value = link;
+  const spice = (state && state.spice) || "mix";
+  for (const b of $("spice").children) { b.setAttribute("aria-pressed", String(b.dataset.spice === spice)); b.disabled = !host; }
+  $("startBtn").hidden = !host;
+  $("startBtn").disabled = list.length < 2;
+  $("lobbyNote").textContent = host
+    ? (list.length < 2 ? "You need at least 2 players. It is best with 4 or more." : list.length + " of " + MAX + " players are in. Start when everyone has joined.")
+    : "Waiting for " + nameOf(state.host) + " to start the game.";
+}
+
+function renderGame(host, list) {
+  const s = state, mine = s.turn === pid, present = players.has(s.turn);
+  const tName = present ? nameOf(s.turn) : (s.turnName || "Someone");
+  $("roundLabel").textContent = "Turn " + s.n;
+  $("turnTitle").replaceChildren(mine ? "Your turn" : el("span", null, tName), mine ? "" : (/s$/i.test(tName) ? "’ turn" : "’s turn"));
+  const top = $("stageTop"), bot = $("stageBottom");
+  top.replaceChildren(); bot.replaceChildren();
+  const key = s.gid + ":" + s.n;
+
+  const secretCard = () => {
+    const qi = drawQuestion(false);
+    const swapped = mem[qKey() + ":swap"] || store.get(qKey() + ":swap");
+    return el("div", { class: "secretcard" },
+      el("span", { class: "label" }, "Only you can see this"),
+      el("p", { class: "question" + (veil ? " veiled" : ""), "aria-hidden": veil ? "true" : null }, fullQ(qi)),
+      el("div", { class: "row" },
+        el("button", { class: "small grow", type: "button", onclick: () => { veil = !veil; render(); } }, veil ? "Show my question" : "Hide it"),
+        s.phase === "ask" && !swapped ? el("button", { class: "small ghost", type: "button", onclick: swapQuestion }, "Swap once") : null));
+  };
+  const answer = () => el("div", { class: "answer stack" },
+    el("p", { class: "label" }, (mine ? "You" : tName) + " picked"),
+    el("p", { class: "big" }, s.targetName || "Someone"));
+
+  if (s.phase !== "flip") { animKey = null; if (animTimer) { clearTimeout(animTimer); animTimer = null; } setCoin("heads", false); }
+
+  if (s.phase === "ask") {
+    if (mine) {
+      top.append(secretCard());
+      bot.append(el("span", { class: "label" }, "Who fits it best? Everyone will see the name."));
+      const grid = el("div", { class: "names" });
+      for (const p of list) grid.append(el("button", { type: "button", disabled: veil ? "" : false, onclick: () => pickTarget(p.id) }, p.id === pid ? p.name + " (me)" : p.name));
+      bot.append(grid);
+      if (veil) bot.append(el("p", { class: "muted center" }, "Read your question first, away from other eyes."));
+    } else {
+      top.append(el("p", { class: "muted center" }, present ? tName + " is reading a secret question and choosing a name." : tName + " has left the room."));
+    }
+  } else if (s.phase === "call") {
+    top.append(answer());
+    if (mine) {
+      top.append(secretCard());
+      bot.append(el("span", { class: "label center" }, "Call the coin. Wrong call and your question is shown."),
+        el("div", { class: "row" },
+          el("button", { class: "primary grow", type: "button", onclick: () => callCoin("heads") }, "Heads"),
+          el("button", { class: "primary grow", type: "button", onclick: () => callCoin("tails") }, "Tails")));
+    } else {
+      bot.append(el("p", { class: "muted center" }, "But what was the question? " + tName + " is calling the coin."));
+    }
+  } else if (s.phase === "flip") {
+    top.append(answer());
+    if (animKey !== key) {
+      animKey = key;
+      setCoin(s.coin, true);
+      if (animTimer) clearTimeout(animTimer);
+      animTimer = setTimeout(() => { animDone = key; animTimer = null; render(); }, 2600);
+    }
+    if (animDone !== key) {
+      bot.append(el("p", { class: "muted center" }, (mine ? "You" : tName) + " called " + s.call + "…"));
+    } else {
+      const line = (mine ? "You" : tName) + " called " + s.call + ". It landed " + s.coin + ".";
+      bot.append(s.revealed
+        ? el("div", { class: "verdict reveal" }, el("span", { class: "label" }, "Wrong call. The question was"), el("p", { class: "question" }, clip(s.q, 200)), el("p", { class: "muted" }, line))
+        : el("div", { class: "verdict secret" }, el("span", { class: "label" }, "Right call. The secret is safe"), el("p", { class: "question" }, mine ? "Don't tell anyone what it was." : "You will never know what was asked."), el("p", { class: "muted" }, line)));
+      if (mine || host) bot.append(el("button", { class: "primary", type: "button", onclick: nextTurn }, "Next player: " + nameOf(nextPid(s.turn))));
+      else bot.append(el("p", { class: "muted center" }, "Waiting for " + tName + " to pass the turn."));
+    }
+  }
+  if (host && !mine && s.phase !== "flip") bot.append(el("button", { class: "small ghost", type: "button", onclick: nextTurn }, "Skip " + tName + "’s turn"));
+
+  // history: hide the newest entry until its coin has landed
+  const done = s.log.filter(l => !(s.phase === "flip" && l.n === s.n && animDone !== key));
+  $("logWrap").hidden = !done.length;
+  const log = $("log"); log.replaceChildren();
+  for (const l of done.slice().reverse()) {
+    log.append(el("li", { class: l.q ? "out" : "kept" },
+      el("span", { class: "who" }, clip(l.by, 16) + " picked " + clip(l.target, 16)),
+      el("span", { class: "q" }, l.q ? clip(l.q, 200) : "Question kept secret")));
+  }
+  $("endBtn").hidden = !host;
+}
+
+/* ---------- wiring ---------- */
+$("joinForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const n = clip($("nameInput").value, 16);
+  if (!n) return;
+  myName = n; store.set("name", n);
+  if (!room) {
+    room = Array.from({ length: 5 }, () => "ABCDEFGHJKLMNPQRSTUVWXYZ"[rnd(24)]).join("");
+    try { history.replaceState(null, "", location.pathname + "?room=" + room + (params.get("broker") ? "&broker=" + encodeURIComponent(BROKER) : "")); } catch {}
+  }
+  homeErr = ""; wantJoin = true;
+  connect();
+  if (ready) join();
+  render();
+});
+$("codeBtn").addEventListener("click", () => {
+  const c = cleanRoom($("codeInput").value);
+  if (c.length < 3) return;
+  location.search = "?room=" + c + (params.get("broker") ? "&broker=" + encodeURIComponent(BROKER) : "");
+});
+$("leaveBtn").addEventListener("click", leave);
+$("copyBtn").addEventListener("click", async () => {
+  const inp = $("shareLink");
+  try { await navigator.clipboard.writeText(inp.value); } catch { inp.select(); try { document.execCommand("copy"); } catch {} }
+  $("copyBtn").textContent = "Copied";
+  setTimeout(() => { $("copyBtn").textContent = "Copy"; }, 1500);
+});
+$("spice").addEventListener("click", e => {
+  const b = e.target.closest("button[data-spice]");
+  if (b && isHost() && state.phase === "lobby") setState({ spice: b.dataset.spice });
+});
+$("startBtn").addEventListener("click", startGame);
+$("endBtn").addEventListener("click", () => { if (isHost()) setState({ phase: "lobby", turn: null, target: null, q: null }); });
+
+// a new turn always starts with the question covered
+let lastTurnKey = "";
+const _render = render;
+render = function () {
+  if (state) { const k = state.gid + ":" + state.n; if (k !== lastTurnKey) { lastTurnKey = k; veil = true; } }
+  _render();
+};
+
+if (room) {
+  connect();
+  if (myName && store.get("in:" + room)) wantJoin = true;
+}
+render();
+})();
+</script>
+</body>
+</html>
