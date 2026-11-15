@@ -94,7 +94,7 @@ input::placeholder { color: var(--muted); font-weight: 500; }
 .players li button { all: unset; cursor: pointer; padding: 0 2px; font-weight: 800; opacity: 0.7; }
 .players li button:focus-visible { outline: 2px solid currentColor; border-radius: 4px; }
 
-.seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; background: var(--surface); padding: 6px; border-radius: var(--r); }
+.seg { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; background: var(--surface); padding: 6px; border-radius: var(--r); }
 .seg button { min-height: 42px; padding: 8px; background: transparent; font-size: 0.92rem; }
 .seg button[aria-pressed=true] { background: var(--surface-2); box-shadow: inset 0 0 0 1.5px var(--coin); }
 
@@ -152,7 +152,7 @@ input::placeholder { color: var(--muted); font-weight: 500; }
   <section id="home" class="stack" hidden>
     <p class="label">Party game · 2 to 10 players</p>
     <h1>Heads<br>or <em>Tell</em></h1>
-    <p class="muted" id="homeLead">A secret "most likely to" question. You answer with a name. Then the coin decides if everyone finds out what was asked.</p>
+    <p class="muted" id="homeLead">A secret question about the people in the room. You answer with a name. Then the coin decides if everyone finds out what was asked.</p>
     <form id="joinForm" class="stack" autocomplete="off">
       <label class="label" for="nameInput">Your name</label>
       <input id="nameInput" type="text" maxlength="16" placeholder="Type your name" required>
@@ -202,8 +202,9 @@ input::placeholder { color: var(--muted); font-weight: 500; }
         <span class="label">Questions</span>
         <div class="seg" id="spice">
           <button type="button" data-spice="mild" aria-pressed="false">Mild</button>
-          <button type="button" data-spice="mix" aria-pressed="false">Mixed</button>
           <button type="button" data-spice="spicy" aria-pressed="false">Spicy</button>
+          <button type="button" data-spice="brutal" aria-pressed="false">Brutal</button>
+          <button type="button" data-spice="mix" aria-pressed="false">All</button>
         </div>
       </div>
       <button class="primary" id="startBtn" type="button">Start the game</button>
@@ -270,10 +271,42 @@ const SPICY = [
 "leave the party with someone unexpected","send a flirty selfie","forget the name of someone they kissed","flirt with someone here without noticing",
 "say yes to a dare they will regret","sneak out of someone's place before breakfast","marry for money","have a crush on a teacher or a boss",
 "be the biggest tease","go on a date just for the free dinner","get caught kissing in public","have the dirtiest mind in the room",
-"read a partner's messages","fall for someone who is clearly bad news"
+"read a partner's messages","fall for someone who is clearly bad news",
+"Who in this room would you kiss right now?","Who here is the most attractive?","Who here would you never, ever date?",
+"Who in this room has the best body?","Who here do you think is the best in bed?","Who here do you think is the worst in bed?",
+"Who in this room have you had a crush on?","Who here would you pick for one night with no consequences?",
+"Who in this room flirts the most with people who are taken?","Who here do you think has the highest body count?",
+"Whose partner or ex do you find attractive?","Who here would you want to see naked?","Who in this room is the most likely to cheat?",
+"Who here have you thought about in a way you would never admit?","Who in this room would you marry tomorrow if you had to?",
+"Who here would be the most boring date?","Who here is definitely hiding a secret relationship or fling?",
+"If everyone here was single, who would you go home with tonight?","Who here do you think has a crush on you?",
+"Who in this room is the biggest player?"
 ];
-const ALL = MILD.map(t => ({ t, s: 0 })).concat(SPICY.map(t => ({ t, s: 1 })));
-const fullQ = i => "Who is most likely to " + ALL[i].t + "?";
+const BRUTAL = [
+"Who in this room do you like the least?","Who here annoys you the most?","Who in this room do you trust the least?",
+"Who here would you cut out of the group if you had to remove one person?","Who in this room talks behind people's backs the most?",
+"Who here is the most fake?","Who in this room have you lied to most recently?","Who here do you think is secretly jealous of you?",
+"Who in this room are you secretly jealous of?","Who here would you never lend money to?","Who in this room gives the worst advice?",
+"Who here do you think will be the least successful?","Who in this room is the most selfish?",
+"Who here would you not invite to your wedding if you could get away with it?","Who in this room has changed for the worse?",
+"Who here thinks they are better than everyone else?","Who in this room would be the first to betray the group?",
+"Who here is the worst at keeping secrets?","Who in this room do you talk about the most when they are not around?",
+"Who here do you think dislikes you?","Who in this room has the worst taste in partners?","Who here is the most boring to be alone with?",
+"Who in this room would you least want to be stuck in a lift with?","Who here do you think lies the most?",
+"Who in this room is the biggest drama starter?","Who here do you think will end up alone?",
+"Who in this room has hurt you and never apologised?","Who here would be the worst parent?",
+"Who in this room do you think is the least intelligent?","Who here acts the most different when certain people are around?",
+"Who in this room would you swap out of the friend group for someone else?","Who here do you respect the least?",
+"Who in this room is the cheapest with money?","Who here do you think is a bad influence on the others?",
+"Who in this room complains the most?","Who here would you never go on holiday with again?",
+"Who in this room is the most likely to steal your partner?","Who here do you think is with the wrong person?",
+"Who in this room have you been angry at and never told?","Who here would sell out a friend for money?",
+"Who in this room is the worst listener?","Who here tries too hard to be liked?",
+"Who in this room would you call last in an emergency?","Whose life choices here do you judge the most?",
+"Who in this room do you think peaked already?"
+];
+const ALL = MILD.map(t => ({ t, s: 0 })).concat(SPICY.map(t => ({ t, s: 1 })), BRUTAL.map(t => ({ t, s: 2 })));
+const fullQ = i => /^[A-Z]/.test(ALL[i].t) ? ALL[i].t : "Who is most likely to " + ALL[i].t + "?";
 
 /* ---------- tiny helpers ---------- */
 const $ = id => document.getElementById(id);
@@ -413,7 +446,7 @@ function drawQuestion(force) {
   let seen = [];
   try { seen = JSON.parse(store.get("seen:" + room) || mem.seen || "[]"); } catch {}
   const shown = new Set(state.log.map(l => l.q).filter(Boolean));
-  const want = state.spice === "mild" ? [0] : state.spice === "spicy" ? [1] : [0, 1];
+  const want = state.spice === "mild" ? [0] : state.spice === "spicy" ? [1] : state.spice === "brutal" ? [2] : [0, 1, 2];
   let pool = ALL.map((q, i) => i).filter(i => want.includes(ALL[i].s) && !shown.has(fullQ(i)));
   let fresh = pool.filter(i => !seen.includes(i));
   if (!fresh.length) { seen = []; fresh = pool.length ? pool : ALL.map((q, i) => i); }
@@ -496,7 +529,7 @@ function renderHome() {
   const hasRoom = !!room;
   $("homeLead").textContent = hasRoom
     ? (ready ? (players.size ? "In room " + room + " now: " + sorted().map(p => p.name).join(", ") + "." : "You are opening room " + room + ". Add your name to join.") : "Looking for room " + room + "…")
-    : "A secret \"most likely to\" question. You answer with a name. Then the coin decides if everyone finds out what was asked.";
+    : "A secret question about the people in the room. You answer with a name. Then the coin decides if everyone finds out what was asked.";
   $("joinBtn").textContent = wantJoin ? "Joining…" : hasRoom ? "Join room " + room : "Create a room";
   $("joinBtn").disabled = wantJoin;
   $("codeJoin").hidden = hasRoom;
