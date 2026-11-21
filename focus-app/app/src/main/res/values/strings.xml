@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Unreel</string>
+    <string name="service_label">Unreel – Reels &amp; Shorts blocker</string>
+    <string name="service_description">Unreel watches only Instagram, YouTube and Facebook. When a Reels or Shorts screen opens, it presses Back for you. Chats, stories and friends\' posts keep working. Nothing you see is stored or sent anywhere.</string>
+</resources>
