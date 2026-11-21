@@ -221,8 +221,16 @@
             <TextView style="@style/CardTitle" android:text="Not blocking something?" />
 
             <TextView
+                android:id="@+id/diagText"
                 style="@style/Hint"
-                android:text="Apps change their screens from time to time. Tap Capture, open the Reel or Short that got through, come back here and share the capture so the detection can be fixed. It records the layout and labels of that one screen, and nothing leaves your phone unless you share it." />
+                android:layout_marginBottom="10dp"
+                android:fontFamily="monospace"
+                android:textColor="@color/text"
+                android:textIsSelectable="true" />
+
+            <TextView
+                style="@style/Hint"
+                android:text="Instagram: just open the screen that wasn't blocked, come back and tap Share (Unreel keeps a snapshot of the latest Instagram screen). YouTube/Facebook: tap Capture first, then open the screen. It records the layout and labels of that screen; nothing leaves your phone unless you share it." />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/captureButton"

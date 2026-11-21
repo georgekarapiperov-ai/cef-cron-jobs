@@ -69,6 +69,18 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         refreshStatus()
         refreshUsage()
+        showDiagnostics()
+    }
+
+    private fun showDiagnostics() {
+        val started = prefs.sp.getLong("service_started", 0L)
+        val fmt = java.text.SimpleDateFormat("dd.MM HH:mm", java.util.Locale.US)
+        findViewById<TextView>(R.id.diagText).text = buildString {
+            append("Blocker service: ")
+            append(if (!accessibilityOn()) "OFF" else if (started == 0L) "on, but hasn't started yet" else "running since ${fmt.format(java.util.Date(started))}")
+            append("\nInstagram feed check: ")
+            append(prefs.sp.getString("ig_status", null) ?: "never ran (open Instagram's Home tab, then come back)")
+        }
     }
 
     private fun bindSwitch(id: Int, get: () -> Boolean, set: (Boolean) -> Unit) {
@@ -215,13 +227,14 @@ class MainActivity : AppCompatActivity() {
     private fun shareCapture() {
         val file = File(filesDir, ReelBlockerService.CAPTURE_FILE)
         if (!file.exists()) {
-            Toast.makeText(this, "No capture yet. Tap Capture first.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "No capture yet. Open Instagram (or tap Capture) first.", Toast.LENGTH_SHORT).show()
             return
         }
         val send = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
             putExtra(Intent.EXTRA_SUBJECT, "Unreel screen capture")
-            putExtra(Intent.EXTRA_TEXT, file.readText().take(90_000))
+            val status = findViewById<TextView>(R.id.diagText).text
+            putExtra(Intent.EXTRA_TEXT, (status.toString() + "\n\n" + file.readText()).take(90_000))
         }
         startActivity(Intent.createChooser(send, "Share capture"))
     }

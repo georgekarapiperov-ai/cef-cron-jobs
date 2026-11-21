@@ -81,17 +81,35 @@ object Detectors {
         "stories_tray",
         "story_tray",
     )
+    private val IG_OTHER_TAB_IDS = listOf("search_tab", "clips_tab", "profile_tab", "creation_tab", "shopping_tab", "direct_tab")
+    private val HOME_WORDS = listOf("home", "начало", "начална")
     private var storiesTrayEverSeen = false
+
+    /** Human-readable result of the last feed check, shown in the app's status line. */
+    var lastFeedInfo: String = "not checked yet"
+        private set
 
     fun instagramFeed(root: AccessibilityNodeInfo, screenHeight: Int): FeedState {
         val homeTab = root.byId(IG + "feed_tab").firstOrNull { it.isVisibleToUser }
-            ?: root.findFirst(400) { it.desc().equals("Home", ignoreCase = true) && it.isClickable }
-            ?: return FeedState.NotHome
-        if (!homeTab.isSelected) return FeedState.NotHome
-
-        val navTop = (root.byId(IG + "tab_bar").firstOrNull { it.isVisibleToUser } ?: homeTab).bounds().top
+            ?: root.findFirst(600) { n -> n.desc().lowercase().let { d -> HOME_WORDS.any { d == it || d.startsWith("$it,") } } }
         val tray = IG_STORIES_TRAY_IDS.firstNotNullOfOrNull { id -> root.byId(IG + id).firstOrNull { it.isVisibleToUser } }
-            ?: root.findFirst(800) { it.desc().contains("story at column", ignoreCase = true) }?.parent
+            ?: root.findFirst(800) { n ->
+                n.desc().lowercase().let { d -> d.contains("story at column") || d.contains("истори") }
+            }?.parent
+        val otherTabSelected = IG_OTHER_TAB_IDS.any { id -> root.byId(IG + id).any { it.isSelected } }
+        val tabBar = root.byId(IG + "tab_bar").firstOrNull { it.isVisibleToUser }
+
+        // Home if the Home tab says it is selected, or if the stories row is showing and no other tab is selected
+        // (the stories row only exists on the Home feed).
+        val onHome = homeTab?.isSelected == true || (tray != null && !otherTabSelected && (homeTab != null || tabBar != null))
+        lastFeedInfo = "home tab: " + (if (homeTab == null) "not found" else if (homeTab.isSelected) "selected" else "found") +
+            " · stories row: " + (if (tray == null) "not found" else "found") +
+            " · tab bar: " + (if (tabBar == null) "not found" else "found") +
+            " · on Home: " + (if (onHome) "yes" else "no")
+        if (!onHome) return FeedState.NotHome
+
+        val density = android.content.res.Resources.getSystem().displayMetrics.density
+        val navTop = (tabBar ?: homeTab)?.bounds()?.top ?: (screenHeight - (64 * density).toInt())
 
         if (tray != null) {
             storiesTrayEverSeen = true
@@ -99,7 +117,7 @@ object Detectors {
         }
         // Stories row scrolled out of view: back to the top. (Only once we know this Instagram version shows it,
         // so a renamed id can't cause endless taps.)
-        if (storiesTrayEverSeen) return FeedState.ScrollToTop(homeTab)
+        if (storiesTrayEverSeen && homeTab != null) return FeedState.ScrollToTop(homeTab)
         return FeedState.Cover((screenHeight * 0.30).toInt(), navTop)
     }
 

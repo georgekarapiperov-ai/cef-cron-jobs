@@ -24,6 +24,10 @@ class FeedCover(private val service: AccessibilityService) {
 
     val isShown: Boolean get() = view != null
 
+    /** Last problem drawing the cover, for the status line. */
+    var lastError: String? = null
+        private set
+
     fun show(top: Int, bottom: Int) {
         if (bottom - top < 80) { hide(); return }
         if (view != null && top == shownTop && bottom == shownBottom) return
@@ -56,7 +60,9 @@ class FeedCover(private val service: AccessibilityService) {
             }
             shownTop = top
             shownBottom = bottom
-        } catch (_: Exception) {
+            lastError = null
+        } catch (e: Exception) {
+            lastError = e.javaClass.simpleName + ": " + e.message
             view = null
         }
     }

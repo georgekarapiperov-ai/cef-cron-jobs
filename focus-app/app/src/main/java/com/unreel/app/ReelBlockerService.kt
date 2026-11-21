@@ -20,6 +20,7 @@ class ReelBlockerService : AccessibilityService() {
     private var checkPending = false
     private var lastActionAt = 0L
     private var lastToastAt = 0L
+    private var lastSnapshotAt = 0L
 
     private var usageCache: Map<TrackedApp, Long> = emptyMap()
     private var usageCachedAt = 0L
@@ -40,6 +41,7 @@ class ReelBlockerService : AccessibilityService() {
         super.onServiceConnected()
         prefs = Prefs(this)
         feedCover = FeedCover(this)
+        prefs.sp.edit().putLong("service_started", System.currentTimeMillis()).apply()
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
@@ -63,6 +65,12 @@ class ReelBlockerService : AccessibilityService() {
         val root = rootInActiveWindow ?: return
         val app = TrackedApp.of(root.packageName?.toString()) ?: return
         val now = System.currentTimeMillis()
+
+        // Keep a snapshot of the latest Instagram screen (on this phone only) so it can be shared if detection misses.
+        if (app == TrackedApp.INSTAGRAM && !prefs.captureRequested && now - lastSnapshotAt > 4_000) {
+            lastSnapshotAt = now
+            saveCapture(app, root)
+        }
 
         if (prefs.captureRequested) {
             prefs.captureRequested = false
@@ -94,7 +102,8 @@ class ReelBlockerService : AccessibilityService() {
     }
 
     private fun updateFeedCover(root: AccessibilityNodeInfo, now: Long) {
-        when (val state = Detectors.instagramFeed(root, resources.displayMetrics.heightPixels)) {
+        val state = Detectors.instagramFeed(root, resources.displayMetrics.heightPixels)
+        when (state) {
             is Detectors.FeedState.NotHome -> feedCover.hide()
             is Detectors.FeedState.Cover -> {
                 val wasShown = feedCover.isShown
@@ -109,6 +118,16 @@ class ReelBlockerService : AccessibilityService() {
                 clickSelfOrParent(state.homeTab)
             }
         }
+        val cover = when {
+            feedCover.isShown -> "shown"
+            feedCover.lastError != null -> "failed (${feedCover.lastError})"
+            else -> "hidden"
+        }
+        prefs.sp.edit().putString(
+            "ig_status",
+            java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.US).format(java.util.Date(now)) +
+                " · " + Detectors.lastFeedInfo + " · cover: " + cover
+        ).apply()
     }
 
     override fun onDestroy() {
