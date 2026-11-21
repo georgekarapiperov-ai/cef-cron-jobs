@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Header -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingTop="8dp"
+            android:paddingBottom="16dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/app_name"
+                android:textColor="@color/text"
+                android:textSize="28sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/statusChip"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/card_bg"
+                android:paddingStart="12dp"
+                android:paddingTop="6dp"
+                android:paddingEnd="12dp"
+                android:paddingBottom="6dp"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Setup (hidden once both permissions are granted) -->
+        <LinearLayout
+            android:id="@+id/setupCard"
+            style="@style/Card">
+
+            <TextView style="@style/CardTitle" android:text="Setup" />
+
+            <TextView
+                android:id="@+id/accessText"
+                style="@style/Hint"
+                android:textColor="@color/text"
+                android:textSize="14sp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/accessButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Turn on the blocker" />
+
+            <TextView
+                style="@style/Hint"
+                android:layout_marginTop="2dp"
+                android:text="Settings › Accessibility › Unreel › On. If the switch is greyed out (Android 13+): App info › ⋮ › Allow restricted settings, then try again." />
+
+            <TextView
+                android:id="@+id/usageText"
+                style="@style/Hint"
+                android:layout_marginTop="12dp"
+                android:textColor="@color/text"
+                android:textSize="14sp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/usageButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Allow usage access" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/appInfoButton"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Open App info (restricted settings)" />
+        </LinearLayout>
+
+        <!-- Today -->
+        <LinearLayout style="@style/Card">
+
+            <TextView style="@style/CardTitle" android:text="Today on social media" />
+
+            <TextView
+                android:id="@+id/todayTotal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/text"
+                android:textSize="40sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/todaySub"
+                style="@style/Hint"
+                android:layout_marginBottom="12dp" />
+
+            <LinearLayout
+                android:id="@+id/appRows"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+        </LinearLayout>
+
+        <!-- Week -->
+        <LinearLayout style="@style/Card">
+
+            <TextView style="@style/CardTitle" android:text="Last 7 days" />
+
+            <TextView
+                android:id="@+id/weekSummary"
+                style="@style/Hint"
+                android:textColor="@color/text"
+                android:textSize="14sp" />
+
+            <com.unreel.app.WeekChartView
+                android:id="@+id/weekChart"
+                android:layout_width="match_parent"
+                android:layout_height="170dp"
+                android:layout_marginTop="8dp" />
+        </LinearLayout>
+
+        <!-- Blocking -->
+        <LinearLayout style="@style/Card">
+
+            <TextView style="@style/CardTitle" android:text="What to block" />
+
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/swIgReels"
+                style="@style/Switch"
+                android:text="Instagram Reels" />
+
+            <TextView
+                style="@style/Hint"
+                android:text="Chats, stories and friends' posts stay available." />
+
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/swIgDm"
+                style="@style/Switch"
+                android:text="Still allow Reels friends send in chat" />
+
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/swIgFeed"
+                style="@style/Switch"
+                android:text="Hide Instagram feed posts" />
+
+            <TextView
+                style="@style/Hint"
+                android:text="Covers the Home feed below the stories row, so you can't scroll posts. Stories and chats keep working." />
+
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/swIgExplore"
+                style="@style/Switch"
+                android:text="Instagram Explore / Search tab" />
+
+            <TextView
+                style="@style/Hint"
+                android:text="Explore is full of Reels. Blocking it also blocks search." />
+
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/swYtShorts"
+                style="@style/Switch"
+                android:text="YouTube Shorts" />
+
+            <TextView
+                style="@style/Hint"
+                android:text="Normal YouTube videos keep working." />
+
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/swFbReels"
+                style="@style/Switch"
+                android:text="Facebook Reels" />
+        </LinearLayout>
+
+        <!-- Limits -->
+        <LinearLayout style="@style/Card">
+
+            <TextView style="@style/CardTitle" android:text="Daily time limits" />
+
+            <TextView
+                style="@style/Hint"
+                android:text="When an app hits its limit, Unreel sends you to the home screen for the rest of the day. 0 = no limit. Needs usage access." />
+
+            <LinearLayout
+                android:id="@+id/limitRows"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+        </LinearLayout>
+
+        <!-- Pause -->
+        <LinearLayout style="@style/Card">
+
+            <TextView style="@style/CardTitle" android:text="Need a break?" />
+
+            <TextView
+                android:id="@+id/pauseText"
+                style="@style/Hint" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/pauseButton"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+        </LinearLayout>
+
+        <!-- Troubleshooting -->
+        <LinearLayout style="@style/Card">
+
+            <TextView style="@style/CardTitle" android:text="Not blocking something?" />
+
+            <TextView
+                android:id="@+id/diagText"
+                style="@style/Hint"
+                android:layout_marginBottom="10dp"
+                android:fontFamily="monospace"
+                android:textColor="@color/text"
+                android:textIsSelectable="true" />
+
+            <TextView
+                style="@style/Hint"
+                android:text="Instagram: just open the screen that wasn't blocked, come back and tap Share (Unreel keeps a snapshot of the latest Instagram screen). YouTube/Facebook: tap Capture first, then open the screen. It records the layout and labels of that screen; nothing leaves your phone unless you share it." />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/captureButton"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Capture the next screen" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/shareCaptureButton"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Share last capture" />
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>
