@@ -11,24 +11,28 @@ android {
         applicationId = "com.unreel.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.1"
     }
 
-    // A fixed debug key committed to the repo, so every CI build can be installed over the last one.
+    // A fixed key committed to the repo, so every CI build can be installed over the last one.
+    // Signed with every scheme so all Android versions and phone makers accept it.
     signingConfigs {
-        getByName("debug") {
-            storeFile = file("debug.keystore")
-            storePassword = "android"
-            keyAlias = "androiddebugkey"
-            keyPassword = "android"
+        create("unreel") {
+            storeFile = file("unreel.keystore")
+            storePassword = "unreel-app"
+            keyAlias = "unreel"
+            keyPassword = "unreel-app"
+            enableV1Signing = true
+            enableV2Signing = true
+            enableV3Signing = true
         }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("unreel")
         }
     }
     compileOptions {

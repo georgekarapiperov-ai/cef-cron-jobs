@@ -33,6 +33,6 @@ you spend in those apps.
 
 ## Build locally
 Needs JDK 17 and the Android SDK: `./gradlew assembleRelease`, APK at `app/build/outputs/apk/release/`.
-Every build is signed with the committed `app/debug.keystore`, so a new build installs over the old one.
+Every build is signed with the committed `app/unreel.keystore`, so a new build installs over the old one.
 
 iPhone isn't supported: iOS doesn't let apps look inside or control other apps.
