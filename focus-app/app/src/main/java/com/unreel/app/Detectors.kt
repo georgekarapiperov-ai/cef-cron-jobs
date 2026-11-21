@@ -84,14 +84,19 @@ object Detectors {
     private val IG_OTHER_TAB_IDS = listOf("search_tab", "clips_tab", "profile_tab", "creation_tab", "shopping_tab", "direct_tab")
     private val HOME_WORDS = listOf("home", "начало", "начална")
     private var storiesTrayEverSeen = false
+    /** Stays true while you're on the Home feed, even after the stories row scrolls out of view. */
+    private var homeFeedActive = false
+
+    fun homeTab(root: AccessibilityNodeInfo): AccessibilityNodeInfo? =
+        root.byId(IG + "feed_tab").firstOrNull { it.isVisibleToUser }
+            ?: root.findFirst(600) { n -> n.desc().lowercase().let { d -> HOME_WORDS.any { d == it || d.startsWith("$it,") } } }
 
     /** Human-readable result of the last feed check, shown in the app's status line. */
     var lastFeedInfo: String = "not checked yet"
         private set
 
     fun instagramFeed(root: AccessibilityNodeInfo, screenHeight: Int): FeedState {
-        val homeTab = root.byId(IG + "feed_tab").firstOrNull { it.isVisibleToUser }
-            ?: root.findFirst(600) { n -> n.desc().lowercase().let { d -> HOME_WORDS.any { d == it || d.startsWith("$it,") } } }
+        val homeTab = homeTab(root)
         val tray = IG_STORIES_TRAY_IDS.firstNotNullOfOrNull { id -> root.byId(IG + id).firstOrNull { it.isVisibleToUser } }
             ?: root.findFirst(800) { n ->
                 n.desc().lowercase().let { d -> d.contains("story at column") || d.contains("истори") }
@@ -101,7 +106,9 @@ object Detectors {
 
         // Home if the Home tab says it is selected, or if the stories row is showing and no other tab is selected
         // (the stories row only exists on the Home feed).
-        val onHome = homeTab?.isSelected == true || (tray != null && !otherTabSelected && (homeTab != null || tabBar != null))
+        val onHome = homeTab?.isSelected == true ||
+            (!otherTabSelected && (homeTab != null || tabBar != null) && (tray != null || homeFeedActive))
+        homeFeedActive = onHome
         lastFeedInfo = "home tab: " + (if (homeTab == null) "not found" else if (homeTab.isSelected) "selected" else "found") +
             " · stories row: " + (if (tray == null) "not found" else "found") +
             " · tab bar: " + (if (tabBar == null) "not found" else "found") +

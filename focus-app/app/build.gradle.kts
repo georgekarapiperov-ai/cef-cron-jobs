@@ -11,8 +11,8 @@ android {
         applicationId = "com.unreel.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 4
-        versionName = "1.3"
+        versionCode = 5
+        versionName = "1.4"
     }
 
     // A fixed key committed to the repo, so every CI build can be installed over the last one.

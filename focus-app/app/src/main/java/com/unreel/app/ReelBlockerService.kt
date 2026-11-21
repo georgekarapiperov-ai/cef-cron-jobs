@@ -52,6 +52,11 @@ class ReelBlockerService : AccessibilityService() {
             if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED && pkg != packageName) feedCover.hide()
             return
         }
+        // Instagram Home feed moved: snap it straight back to the top, so posts can't be scrolled to.
+        if (pkg == TrackedApp.INSTAGRAM.pkg && event.eventType == AccessibilityEvent.TYPE_VIEW_SCROLLED &&
+            prefs.hideIgFeed && !prefs.isPaused
+        ) snapFeedBack(event)
+
         // Content events arrive in bursts; look at the screen at most every 150 ms.
         if (checkPending) return
         checkPending = true
@@ -128,6 +133,29 @@ class ReelBlockerService : AccessibilityService() {
             java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.US).format(java.util.Date(now)) +
                 " · " + Detectors.lastFeedInfo + " · cover: " + cover
         ).apply()
+    }
+
+    private var lastSnapAt = 0L
+
+    private fun snapFeedBack(event: AccessibilityEvent) {
+        val now = System.currentTimeMillis()
+        if (now - lastSnapAt < 350) return
+        val src = event.source ?: return
+        val screenH = resources.displayMetrics.heightPixels
+        val r = android.graphics.Rect().also { src.getBoundsInScreen(it) }
+        if (r.height() < screenH * 0.4) return  // the sideways stories row, not the feed
+        val scrolledDown = event.fromIndex > 0 ||
+            (android.os.Build.VERSION.SDK_INT >= 28 && event.scrollDeltaY > 0)
+        if (!scrolledDown) return
+        val root = rootInActiveWindow ?: return
+        if (Detectors.instagramFeed(root, screenH) is Detectors.FeedState.NotHome) return
+        lastSnapAt = now
+        // Tapping Home while on Home is Instagram's own "scroll to top"; scroll the list back as a fallback.
+        val tab = Detectors.homeTab(root)
+        if (tab == null || !clickSelfOrParent(tab)) {
+            repeat(4) { src.performAction(AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD) }
+        }
+        toast("Feed is off — stories and chats only")
     }
 
     override fun onDestroy() {
