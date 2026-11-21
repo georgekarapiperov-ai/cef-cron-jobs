@@ -66,6 +66,46 @@ object Detectors {
         return Verdict.Allow
     }
 
+    // ---------- Instagram Home feed (stories row stays, posts get covered) ----------
+    sealed class FeedState {
+        data object NotHome : FeedState()
+        data class Cover(val top: Int, val bottom: Int) : FeedState()
+        /** The stories row was scrolled away: tap Home to jump back to the top. */
+        data class ScrollToTop(val homeTab: AccessibilityNodeInfo) : FeedState()
+    }
+
+    // Instagram calls the stories row the "reels tray" internally.
+    private val IG_STORIES_TRAY_IDS = listOf(
+        "reels_tray_container",
+        "reels_tray_recycler_view",
+        "stories_tray",
+        "story_tray",
+    )
+    private var storiesTrayEverSeen = false
+
+    fun instagramFeed(root: AccessibilityNodeInfo, screenHeight: Int): FeedState {
+        val homeTab = root.byId(IG + "feed_tab").firstOrNull { it.isVisibleToUser }
+            ?: root.findFirst(400) { it.desc().equals("Home", ignoreCase = true) && it.isClickable }
+            ?: return FeedState.NotHome
+        if (!homeTab.isSelected) return FeedState.NotHome
+
+        val navTop = (root.byId(IG + "tab_bar").firstOrNull { it.isVisibleToUser } ?: homeTab).bounds().top
+        val tray = IG_STORIES_TRAY_IDS.firstNotNullOfOrNull { id -> root.byId(IG + id).firstOrNull { it.isVisibleToUser } }
+            ?: root.findFirst(800) { it.desc().contains("story at column", ignoreCase = true) }?.parent
+
+        if (tray != null) {
+            storiesTrayEverSeen = true
+            return FeedState.Cover(tray.bounds().bottom, navTop)
+        }
+        // Stories row scrolled out of view: back to the top. (Only once we know this Instagram version shows it,
+        // so a renamed id can't cause endless taps.)
+        if (storiesTrayEverSeen) return FeedState.ScrollToTop(homeTab)
+        return FeedState.Cover((screenHeight * 0.30).toInt(), navTop)
+    }
+
+    private fun AccessibilityNodeInfo.bounds(): android.graphics.Rect =
+        android.graphics.Rect().also { getBoundsInScreen(it) }
+
     private fun homeTabOrBack(root: AccessibilityNodeInfo): Verdict {
         val home = root.byId(IG + "feed_tab").firstOrNull()
             ?: root.findFirst(400) { it.desc().equals("Home", ignoreCase = true) && it.isClickable }

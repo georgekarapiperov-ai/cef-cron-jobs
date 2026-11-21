@@ -22,6 +22,11 @@ class Prefs(context: Context) {
         get() = sp.getBoolean("ig_explore", false)
         set(v) = sp.edit().putBoolean("ig_explore", v).apply()
 
+    /** Cover Instagram's Home feed posts, keeping the stories row and chats. */
+    var hideIgFeed: Boolean
+        get() = sp.getBoolean("ig_feed", true)
+        set(v) = sp.edit().putBoolean("ig_feed", v).apply()
+
     var blockYtShorts: Boolean
         get() = sp.getBoolean("yt_shorts", true)
         set(v) = sp.edit().putBoolean("yt_shorts", v).apply()

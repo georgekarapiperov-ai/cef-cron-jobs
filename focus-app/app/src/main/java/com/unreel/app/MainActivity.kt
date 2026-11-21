@@ -47,6 +47,7 @@ class MainActivity : AppCompatActivity() {
 
         bindSwitch(R.id.swIgReels, { prefs.blockIgReels }, { prefs.blockIgReels = it })
         bindSwitch(R.id.swIgDm, { prefs.allowIgDmReels }, { prefs.allowIgDmReels = it })
+        bindSwitch(R.id.swIgFeed, { prefs.hideIgFeed }, { prefs.hideIgFeed = it })
         bindSwitch(R.id.swIgExplore, { prefs.blockIgExplore }, { prefs.blockIgExplore = it })
         bindSwitch(R.id.swYtShorts, { prefs.blockYtShorts }, { prefs.blockYtShorts = it })
         bindSwitch(R.id.swFbReels, { prefs.blockFbReels }, { prefs.blockFbReels = it })

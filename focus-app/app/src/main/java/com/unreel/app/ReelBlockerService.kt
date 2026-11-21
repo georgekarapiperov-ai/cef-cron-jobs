@@ -9,8 +9,9 @@ import android.widget.Toast
 import java.io.File
 
 /**
- * Watches Instagram, YouTube and Facebook (only those: see res/xml/accessibility_config.xml).
- * When a Reels / Shorts screen appears it backs out of it, and it enforces the daily time limits.
+ * Acts only on Instagram, YouTube and Facebook. When a Reels / Shorts screen appears it backs out of it,
+ * covers Instagram's Home feed if asked, and enforces the daily time limits.
+ * Events from other apps are only used to notice that Instagram is no longer on screen; their content is never read.
  */
 class ReelBlockerService : AccessibilityService() {
 
@@ -23,13 +24,32 @@ class ReelBlockerService : AccessibilityService() {
     private var usageCache: Map<TrackedApp, Long> = emptyMap()
     private var usageCachedAt = 0L
 
+    private lateinit var feedCover: FeedCover
+
+    /** While the feed cover is up, re-check every 700 ms so it goes away the moment Instagram leaves the Home feed. */
+    private val coverWatchdog = object : Runnable {
+        override fun run() {
+            if (!feedCover.isShown) return
+            if (rootInActiveWindow?.packageName?.toString() != TrackedApp.INSTAGRAM.pkg) feedCover.hide()
+            else checkScreen()
+            if (feedCover.isShown) handler.postDelayed(this, 700)
+        }
+    }
+
     override fun onServiceConnected() {
         super.onServiceConnected()
         prefs = Prefs(this)
+        feedCover = FeedCover(this)
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        if (event == null || TrackedApp.of(event.packageName?.toString()) == null) return
+        if (event == null) return
+        val pkg = event.packageName?.toString()
+        if (TrackedApp.of(pkg) == null) {
+            // Events from other apps are ignored; a new app window just means Instagram's feed is no longer on screen.
+            if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED && pkg != packageName) feedCover.hide()
+            return
+        }
         // Content events arrive in bursts; look at the screen at most every 150 ms.
         if (checkPending) return
         checkPending = true
@@ -50,10 +70,12 @@ class ReelBlockerService : AccessibilityService() {
             toast("Unreel: screen captured. Go back to Unreel to share it.")
         }
 
+        if (app != TrackedApp.INSTAGRAM || prefs.isPaused || !prefs.hideIgFeed) feedCover.hide()
         if (prefs.isPaused) return
         if (now - lastActionAt < 900) return  // give the last Back/tap time to land
 
         if (limitReached(app, now)) {
+            feedCover.hide()
             act(app, now, null, home = true)
             toast("${app.label}: daily limit reached. Back to work!")
             return
@@ -65,10 +87,33 @@ class ReelBlockerService : AccessibilityService() {
             TrackedApp.FACEBOOK -> Detectors.facebook(root, prefs)
         }
         when (verdict) {
-            is Verdict.Allow -> Unit
-            is Verdict.Back -> { act(app, now, null); blockedToast(app) }
-            is Verdict.Tap -> { act(app, now, verdict.node); blockedToast(app) }
+            is Verdict.Allow -> if (app == TrackedApp.INSTAGRAM && prefs.hideIgFeed) updateFeedCover(root, now)
+            is Verdict.Back -> { feedCover.hide(); act(app, now, null); blockedToast(app) }
+            is Verdict.Tap -> { feedCover.hide(); act(app, now, verdict.node); blockedToast(app) }
         }
+    }
+
+    private fun updateFeedCover(root: AccessibilityNodeInfo, now: Long) {
+        when (val state = Detectors.instagramFeed(root, resources.displayMetrics.heightPixels)) {
+            is Detectors.FeedState.NotHome -> feedCover.hide()
+            is Detectors.FeedState.Cover -> {
+                val wasShown = feedCover.isShown
+                feedCover.show(state.top, state.bottom)
+                if (!wasShown && feedCover.isShown) {
+                    handler.removeCallbacks(coverWatchdog)
+                    handler.postDelayed(coverWatchdog, 700)
+                }
+            }
+            is Detectors.FeedState.ScrollToTop -> {
+                lastActionAt = now
+                clickSelfOrParent(state.homeTab)
+            }
+        }
+    }
+
+    override fun onDestroy() {
+        if (::feedCover.isInitialized) feedCover.hide()
+        super.onDestroy()
     }
 
     private fun act(app: TrackedApp, now: Long, tap: AccessibilityNodeInfo?, home: Boolean = false) {

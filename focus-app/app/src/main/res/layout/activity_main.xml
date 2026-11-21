@@ -151,6 +151,15 @@
                 android:text="Still allow Reels friends send in chat" />
 
             <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/swIgFeed"
+                style="@style/Switch"
+                android:text="Hide Instagram feed posts" />
+
+            <TextView
+                style="@style/Hint"
+                android:text="Covers the Home feed below the stories row, so you can't scroll posts. Stories and chats keep working." />
+
+            <com.google.android.material.materialswitch.MaterialSwitch
                 android:id="@+id/swIgExplore"
                 style="@style/Switch"
                 android:text="Instagram Explore / Search tab" />
