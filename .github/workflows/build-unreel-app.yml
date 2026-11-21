@@ -1,0 +1,45 @@
+name: Build Unreel Android app
+# Builds the APK of the Reels/Shorts blocker in focus-app/ and attaches it to a GitHub Release,
+# so it can be downloaded straight onto the phone.
+on:
+  push:
+    paths:
+      - "focus-app/**"
+      - ".github/workflows/build-unreel-app.yml"
+  workflow_dispatch: {}
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: focus-app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Build the APK (the runner already has the Android SDK)
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon assembleRelease
+          cp app/build/outputs/apk/release/app-release.apk Unreel.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Unreel-apk
+          path: focus-app/Unreel.apk
+      - name: Publish a release with the APK
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: unreel-build-${{ github.run_number }}
+          name: Unreel build ${{ github.run_number }}
+          target_commitish: ${{ github.sha }}
+          prerelease: true
+          body: |
+            Download **Unreel.apk** on your Android phone and open it to install.
+            Built from ${{ github.ref_name }} @ ${{ github.sha }}.
+          files: focus-app/Unreel.apk
